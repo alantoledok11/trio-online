@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Trio Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #14151f;
+    --panel: #1c1e2b;
+    --panel-2: #262838;
+    --line: rgba(255,255,255,.08);
+    --text: #f1eee6;
+    --text-dim: rgba(241,238,230,.6);
+    --accent: #ffd93d;
+    --accent-2: #ff3ea5;
+    --danger: #ff5a5a;
+    --ink-dark: #211d17;
+
+    --card-w: clamp(64px, 13vw, 96px);
+    --card-h: calc(var(--card-w) * 1.5);
+    --card-radius: calc(var(--card-w) * 0.14);
+
+    --v1:  hsl(48 88% 58%);  --v2:  hsl(35 88% 55%);  --v3:  hsl(22 85% 55%);
+    --v4:  hsl(9  82% 56%);  --v5:  hsl(356 80% 54%); --v6:  hsl(343 78% 50%);
+    --v7:  #FFD700;          --v8:  hsl(309 75% 50%); --v9:  hsl(288 70% 50%);
+    --v10: hsl(267 68% 52%); --v11: hsl(246 65% 50%); --v12: hsl(225 55% 24%);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    min-height:100vh; background: radial-gradient(ellipse at top, #1c1e30, var(--bg) 70%);
+    color: var(--text); font-family: -apple-system,'Segoe UI',Arial,sans-serif; padding:18px;
+  }
+  #app{ max-width: 980px; margin:0 auto; }
+  h1,h2,h3{ margin:0 0 6px; }
+  button{
+    font-family:inherit; font-weight:700; border:none; border-radius:9px;
+    padding:11px 18px; font-size:14px; cursor:pointer; transition:transform .1s, filter .1s;
+  }
+  button:active{ transform:scale(.96); }
+  button:disabled{ opacity:.35; cursor:not-allowed; }
+  .btn-primary{ background:var(--accent); color:var(--ink-dark); }
+  .btn-primary:hover:not(:disabled){ filter:brightness(1.08); }
+  .btn-outline{ background:transparent; color:var(--text); border:2px solid var(--line); }
+  .btn-outline:hover:not(:disabled){ border-color: var(--text-dim); }
+  .btn-danger{ background:var(--danger); color:#fff; }
+  input[type=text]{
+    font-family:inherit; font-size:15px; padding:11px 13px; border-radius:9px;
+    border:2px solid var(--line); background:var(--panel-2); color:var(--text); width:100%;
+  }
+  input[type=text]:focus{ outline:2px solid var(--accent); }
+
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:26px; max-width:440px; margin:24px auto; }
+  .panel.wide{ max-width:900px; }
+  .hero{ text-align:center; padding:20px 0 8px; }
+  .hero h1{ font-size:38px; letter-spacing:2px; }
+  .hero .dots{ display:flex; justify-content:center; gap:6px; margin:8px 0; }
+  .hero .dots span{ width:14px; height:14px; border-radius:50%; }
+  .hero p{ color:var(--text-dim); font-size:14px; }
+  .field{ margin-bottom:14px; }
+  .field label{ display:block; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); margin-bottom:6px; }
+  .tabbar{ display:flex; gap:8px; margin-bottom:18px; }
+  .tabbar button{ flex:1; background:var(--panel-2); color:var(--text); }
+  .tabbar button.active{ background:var(--accent); color:var(--ink-dark); }
+  .error-msg{ background:rgba(255,90,90,.12); border:1px solid var(--danger); padding:9px 12px; border-radius:8px; font-size:13px; margin-bottom:12px; }
+
+  .code-box{ text-align:center; margin-bottom:20px; }
+  .code-box .code{ font-size:38px; font-weight:800; letter-spacing:6px; color:var(--accent); }
+  .code-box .label{ font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-dim); }
+  .seats-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .seat-card{ background:var(--panel-2); border:1px solid var(--line); border-radius:9px; padding:11px; text-align:center; font-size:13px; }
+  .seat-card.filled{ border-color:var(--accent); }
+  .seat-card .empty{ color:var(--text-dim); font-style:italic; }
+  .helptext{ text-align:center; color:var(--text-dim); font-size:13px; margin-top:8px; }
+
+  .topbar{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .turn-banner{ text-align:center; font-size:15px; padding:10px; border-radius:9px; background:var(--panel-2); border:1px solid var(--line); margin-bottom:14px; }
+  .turn-banner.mine{ border-color:var(--accent); color:var(--accent); font-weight:700; }
+
+  .board{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px; }
+  .table-row{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap; min-height: var(--card-h); max-width:550px; }
+
+  .round-table{ 
+    position: relative;
+    width: 100%; 
+    max-width: 950px;
+    /* Oval suave para espalhar os 7 jogadores sem forçar barra de rolagem */
+    aspect-ratio: 16 / 10;
+    margin: 10px auto; 
+  }
+  .round-table .mesa-central{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    /* Ajustado para não sobrepor em telas menores */
+    width: clamp(230px, 36vw, 360px);
+    height: clamp(230px, 36vw, 360px);
+    border-radius: 50%;
+    /* Diminui a carta da mesa para caber bem o grid de até 9 cartas */
+    --card-w: clamp(36px, 5vw, 54px);
+    background: transparent;
+    padding: 18px;
+  }
+  .round-table .mesa-central.has-cards{
+    /* Sem fundo/borda extra quando tem cartas */
+  }
+  .round-table .mesa-label{
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: rgba(180,200,255,.6);
+    margin-bottom: 8px;
+  }
+  .round-table .mesa-central .table-row{
+    justify-content: center;
+    gap: 6px;
+    /* Exatamente a largura de 3 cartas + gaps (3 * 1 + 0.2 folga) */
+    max-width: calc(var(--card-w) * 3.2 + 12px);
+  }
+
+
+  .round-table .seat-wrap{ 
+    position: absolute;
+    width: max-content; 
+    transform: translate(-50%, -50%);
+    z-index: 2;
+  }
+  .round-table .seat-wrap .player-block{ width:100%; }
+
+  @media (max-width:760px){
+    .round-table{ aspect-ratio: auto; min-height: 80vh; display: flex; flex-direction: column; gap: 12px; margin: 10px auto; }
+    .round-table .mesa-central{ position: relative; top: 0; left: 0; transform: none; width: 100%; border-radius: 14px; order: -1; aspect-ratio: auto; height: auto; padding: 30px; }
+    .round-table .seat-wrap{ position: relative; left: 0 !important; top: 0 !important; transform: none; width: 100%; align-self: stretch; }
+    .player-block { border-radius: 12px; height: auto; width: 100%; }
+  }
+
+  .player-block{
+    background: var(--panel-2);
+    border-radius: 12px;
+    padding: 10px;
+    /* Reduz as cartas dos jogadores para que 7 caibam bem sem amontoar */
+    --card-w: clamp(40px, 6vw, 56px);
+    position: relative;
+    /* anel: borda gradiente via box-shadow em camadas */
+    box-shadow:
+      0 0 0 1.5px rgba(255,255,255,.06),
+      0 0 0 3px rgba(80,90,140,.15),
+      0 4px 18px rgba(0,0,0,.35);
+    transition: box-shadow .3s ease, transform .2s ease;
+  }
+  .player-block:hover{
+    box-shadow:
+      0 0 0 1.5px rgba(255,255,255,.12),
+      0 0 0 4px rgba(120,130,200,.25),
+      0 0 16px rgba(100,120,255,.12),
+      0 6px 24px rgba(0,0,0,.45);
+    transform: translateY(-1px);
+  }
+  .player-block.active-turn{
+    box-shadow:
+      0 0 0 2px var(--accent),
+      0 0 0 5px rgba(255,217,61,.15),
+      0 0 24px rgba(255,217,61,.20),
+      0 4px 20px rgba(0,0,0,.4);
+    background: linear-gradient(160deg, rgba(255,217,61,.07), var(--panel-2) 65%);
+  }
+
+  .player-block .pname{ font-weight:700; font-size:13px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .player-block .pname .you{ color:var(--accent); font-size:11px; }
+  .player-block .trios{ font-size:11px; color:var(--text-dim); margin:2px 0 12px; }
+  .hand-area{ display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:nowrap; }
+  .player-reveals{ display:flex; justify-content:center; gap:8px; pointer-events:none; }
+  .hand-row{ display:flex; gap:10px; flex-wrap:nowrap; align-items:center; justify-content:center; }
+  .hand-row .card.fan-end .card-face{ border-color:rgba(255,255,255,.8); }
+  .hand-row .card.fan-end.clickable:hover .card-inner{ transform:translateY(-8px); }
+  /* baralho oculto entre as duas cartas */
+  .hidden-deck{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; align-self:center; cursor:default; }
+  .hd-stack{ position:relative; width:28px; height:40px; }
+  .hd-card{ position:absolute; width:24px; height:34px; border-radius:5px; border:1px solid rgba(255,255,255,.22); background:linear-gradient(145deg,#1e2248,#0d0f20); }
+  .hd-card:nth-child(1){ transform:rotate(-8deg); top:0; left:0; }
+  .hd-card:nth-child(2){ transform:rotate(-3deg); top:3px; left:2px; }
+  .hd-card:nth-child(3){ transform:rotate(2deg); top:5px; left:4px; }
+  .hd-count{ font-size:12px; font-weight:800; color:var(--text-dim); letter-spacing:.5px; }
+  .hidden-icon{ font-size:calc(var(--card-w)*0.55); color:var(--text-dim); line-height:1; flex:0 0 auto; }
+  .trios{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .trio-group{ display:flex; gap:2px; }
+  .mini-card{ width:30px; height:44px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.6); text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .mini-card[data-ref="1"], .mini-card[data-ref="2"], .mini-card[data-ref="7"]{ color:var(--ink-dark); text-shadow:none; }
+  .mini-card[data-ref="1"]{ background:var(--v1); } .mini-card[data-ref="2"]{ background:var(--v2); }
+  .mini-card[data-ref="3"]{ background:var(--v3); } .mini-card[data-ref="4"]{ background:var(--v4); }
+  .mini-card[data-ref="5"]{ background:var(--v5); } .mini-card[data-ref="6"]{ background:var(--v6); }
+  .mini-card[data-ref="7"]{ background:var(--v7); } .mini-card[data-ref="8"]{ background:var(--v8); }
+  .mini-card[data-ref="9"]{ background:var(--v9); } .mini-card[data-ref="10"]{ background:var(--v10); }
+  .mini-card[data-ref="11"]{ background:var(--v11); } .mini-card[data-ref="12"]{ background:var(--v12); }
+  .trios .no-trios{ color:var(--text-dim); }
+  .trios .dot-sep{ color:var(--text-dim); margin:0 2px; }
+
+  .actionbar{ display:flex; justify-content:center; gap:10px; margin-top:16px; }
+  .log-toggle{ text-align:center; margin-top:12px; }
+  .link-btn{ background:none; border:none; color:var(--accent); text-decoration:underline; cursor:pointer; font:inherit; font-size:12px; }
+  .log-panel{ max-height:150px; overflow-y:auto; background:var(--panel-2); border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--text-dim); }
+  .log-panel div{ padding:3px 0; border-bottom:1px dashed var(--line); }
+
+  .overlay{ position:fixed; inset:0; background:rgba(10,10,16,.75); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; }
+
+  /* ---- carta (mesmo componente já validado) ---- */
+  .card{ width:var(--card-w); height:calc(var(--card-w) * 1.5); perspective:900px; }
+  .card.clickable{ cursor:pointer; }
+  .card.clickable:hover .card-inner{ transform: translateY(-4px); }
+  .card.clickable.face-up:hover .card-inner{ transform: rotateY(180deg) translateY(-4px); }
+  .card-inner{ position:relative; width:100%; height:100%; transition:transform .5s cubic-bezier(.4,.15,.2,1); transform-style:preserve-3d; }
+  .card.face-up .card-inner{ transform:rotateY(180deg); }
+  .card-face{ position:absolute; inset:0; border-radius:calc(var(--card-w) * 0.14); border:max(2px, calc(var(--card-w)*0.03)) solid #fff; box-shadow:0 5px 12px rgba(0,0,0,.4); backface-visibility:hidden; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  .card-back{ background: linear-gradient(145deg,#1e2248 0%,#0d0f20 60%,#161836 100%); }
+  .card-back-logo{
+    position:relative; z-index:1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    user-select:none;
+  }
+  .card-back-logo .trio-word{
+    font-family: 'Cinzel', Georgia, serif;
+    font-weight:900;
+    font-size: calc(var(--card-w)*0.20);
+    letter-spacing: calc(var(--card-w)*0.04);
+    line-height: 1;
+    background: linear-gradient(160deg,
+      rgba(255,255,255,0.95) 0%,
+      rgba(200,205,215,1) 35%,
+      rgba(160,168,180,1) 60%,
+      rgba(210,215,225,1) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 1px 4px rgba(255,255,255,.15));
+    text-indent: calc(var(--card-w)*0.04);
+  }
+
+  .card-front{ transform:rotateY(180deg); background:var(--card-color,#888); color:var(--card-text,#fff); }
+  .lace-ring{ position:absolute; inset:0; width:100%; height:100%; }
+  .lace-ring path{ fill: rgba(255,255,255,.55); }
+  .card-back .lace-ring path{ fill: rgba(255,255,255,.20); }
+  .card-number{ font-weight:800; font-size:calc(var(--card-w)*0.46); line-height:1; }
+  .corner{ position:absolute; font-weight:800; line-height:1; opacity:.92; }
+  .corner-tl, .corner-tr{ top:calc(var(--card-w)*0.07); font-size:calc(var(--card-w)*0.16); }
+  .corner-tl{ left:calc(var(--card-w)*0.09); } .corner-tr{ right:calc(var(--card-w)*0.09); }
+  .corner-bl, .corner-br{ display:none; } /* mantido só por compatibilidade, não usado mais */
+  .corner-badge{ position:absolute; bottom:calc(var(--card-w)*0.06); width:calc(var(--card-w)*0.22); height:calc(var(--card-w)*0.30); border-radius:calc(var(--card-w)*0.05); display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:calc(var(--card-w)*0.15); border:1.5px solid rgba(255,255,255,.55); box-shadow:0 2px 4px rgba(0,0,0,.35); }
+  .corner-badge.left{ left:calc(var(--card-w)*0.07); transform:rotate(-6deg); }
+  .corner-badge.right{ right:calc(var(--card-w)*0.07); transform:rotate(6deg); }
+  .corner-badge[data-ref="1"], .corner-badge[data-ref="2"], .corner-badge[data-ref="7"]{ color:var(--ink-dark); }
+  .corner-badge[data-ref="1"]{ background:var(--v1); } .corner-badge[data-ref="2"]{ background:var(--v2); }
+  .corner-badge[data-ref="3"]{ background:var(--v3); } .corner-badge[data-ref="4"]{ background:var(--v4); }
+  .corner-badge[data-ref="5"]{ background:var(--v5); } .corner-badge[data-ref="6"]{ background:var(--v6); }
+  .corner-badge[data-ref="7"]{ background:var(--v7); } .corner-badge[data-ref="8"]{ background:var(--v8); }
+  .corner-badge[data-ref="9"]{ background:var(--v9); } .corner-badge[data-ref="10"]{ background:var(--v10); }
+  .corner-badge[data-ref="11"]{ background:var(--v11); } .corner-badge[data-ref="12"]{ background:var(--v12); }
+  .card[data-value="1"]  .card-front{ --card-color:var(--v1);  --card-text:var(--ink-dark); }
+  .card[data-value="2"]  .card-front{ --card-color:var(--v2);  --card-text:var(--ink-dark); }
+  .card[data-value="3"]  .card-front{ --card-color:var(--v3);  --card-text:#fff; }
+  .card[data-value="4"]  .card-front{ --card-color:var(--v4);  --card-text:#fff; }
+  .card[data-value="5"]  .card-front{ --card-color:var(--v5);  --card-text:#fff; }
+  .card[data-value="6"]  .card-front{ --card-color:var(--v6);  --card-text:#fff; }
+  .card[data-value="7"]  .card-front{ --card-color:var(--v7);  --card-text:var(--ink-dark); }
+  .card[data-value="8"]  .card-front{ --card-color:var(--v8);  --card-text:#fff; }
+  .card[data-value="9"]  .card-front{ --card-color:var(--v9);  --card-text:#fff; }
+  .card[data-value="10"] .card-front{ --card-color:var(--v10); --card-text:#fff; }
+  .card[data-value="11"] .card-front{ --card-color:var(--v11); --card-text:#fff; }
+  .card[data-value="12"] .card-front{ --card-color:var(--v12); --card-text:#fff; }
+
+  /* ========== CHAT ========== */
+  #chat-widget{
+    position: fixed; bottom: 18px; right: 18px;
+    width: 300px; z-index: 999;
+    font-family: -apple-system,'Segoe UI',Arial,sans-serif;
+  }
+  #chat-toggle{
+    background: var(--accent); color: var(--ink-dark);
+    border: none; border-radius: 50px; padding: 10px 18px;
+    font-weight: 800; font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.45);
+    transition: filter .15s, transform .1s;
+    margin-left: auto;
+  }
+  #chat-toggle:hover{ filter: brightness(1.1); }
+  #chat-toggle:active{ transform: scale(.96); }
+  #chat-toggle .badge{
+    background: var(--danger); color: #fff;
+    border-radius: 50px; padding: 2px 7px; font-size: 11px;
+    display: none;
+  }
+  #chat-toggle .badge.visible{ display: inline; }
+  #chat-box{
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.55);
+    margin-bottom: 8px;
+    display: none; flex-direction: column;
+    max-height: 360px;
+  }
+  #chat-box.open{ display: flex; }
+  #chat-header{
+    background: var(--panel-2); padding: 10px 14px;
+    font-weight: 700; font-size: 13px;
+    border-bottom: 1px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  #chat-msgs{
+    flex: 1; overflow-y: auto; padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 7px;
+    scrollbar-width: thin;
+  }
+  .chat-msg{ font-size: 13px; line-height: 1.4; }
+  .chat-msg .chat-name{
+    font-weight: 700; margin-right: 4px;
+    color: var(--accent);
+  }
+  .chat-msg.mine .chat-name{ color: var(--accent-2); }
+  .chat-msg .chat-text{ color: var(--text); }
+  #chat-form{
+    display: flex; gap: 6px; padding: 8px 10px;
+    border-top: 1px solid var(--line); background: var(--panel-2);
+  }
+  #chat-input{
+    flex: 1; font-size: 13px; padding: 8px 10px;
+    border-radius: 8px; border: 1.5px solid var(--line);
+    background: var(--panel); color: var(--text);
+  }
+  #chat-input:focus{ outline: none; border-color: var(--accent); }
+  #chat-send{
+    background: var(--accent); color: var(--ink-dark);
+    border: none; border-radius: 8px; padding: 8px 12px;
+    font-weight: 700; font-size: 13px; cursor: pointer;
+  }
+  #chat-send:hover{ filter: brightness(1.08); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- CHAT WIDGET (sempre visível assim que entrar na sala) -->
+<div id="chat-widget" style="display:none">
+  <div id="chat-box">
+    <div id="chat-header"><span>💬 Chat da sala</span></div>
+    <div id="chat-msgs"></div>
+    <div id="chat-form">
+      <input id="chat-input" type="text" placeholder="Mensagem..." maxlength="200" autocomplete="off">
+      <button id="chat-send">Enviar</button>
+    </div>
+  </div>
+  <button id="chat-toggle">💬 Chat <span class="badge" id="chat-badge">0</span></button>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+const CORNER_HINTS = {
+  1: {left:6, right:8}, 2: {left:5, right:9}, 3: {left:4, right:10},
+  4: {left:3, right:11}, 5: {left:2, right:12}, 6: {left:1, right:null},
+  7: {left:null, right:null},
+  8: {left:null, right:1}, 9: {left:null, right:2}, 10:{left:null, right:3},
+  11:{left:null, right:4}, 12:{left:null, right:5}
+};
+function cornerBadge(value, side){
+  if(value===null || value===undefined) return '';
+  return `<span class="corner-badge ${side}" data-ref="${value}">${value}</span>`;
+}
+function laceRingSVG(){
+  return `<svg class="lace-ring" viewBox="0 0 100 150" aria-hidden="true">
+    <path fill-rule="evenodd" d="M 5.00,5.00 A 4.091,4.091 0 0,1 13.18,5.00 A 4.091,4.091 0 0,1 21.36,5.00 A 4.091,4.091 0 0,1 29.55,5.00 A 4.091,4.091 0 0,1 37.73,5.00 A 4.091,4.091 0 0,1 45.91,5.00 A 4.091,4.091 0 0,1 54.09,5.00 A 4.091,4.091 0 0,1 62.27,5.00 A 4.091,4.091 0 0,1 70.45,5.00 A 4.091,4.091 0 0,1 78.64,5.00 A 4.091,4.091 0 0,1 86.82,5.00 A 4.091,4.091 0 0,1 95.00,5.00 A 3.889,3.889 0 0,1 95.00,12.78 A 3.889,3.889 0 0,1 95.00,20.56 A 3.889,3.889 0 0,1 95.00,28.33 A 3.889,3.889 0 0,1 95.00,36.11 A 3.889,3.889 0 0,1 95.00,43.89 A 3.889,3.889 0 0,1 95.00,51.67 A 3.889,3.889 0 0,1 95.00,59.44 A 3.889,3.889 0 0,1 95.00,67.22 A 3.889,3.889 0 0,1 95.00,75.00 A 3.889,3.889 0 0,1 95.00,82.78 A 3.889,3.889 0 0,1 95.00,90.56 A 3.889,3.889 0 0,1 95.00,98.33 A 3.889,3.889 0 0,1 95.00,106.11 A 3.889,3.889 0 0,1 95.00,113.89 A 3.889,3.889 0 0,1 95.00,121.67 A 3.889,3.889 0 0,1 95.00,129.44 A 3.889,3.889 0 0,1 95.00,137.22 A 3.889,3.889 0 0,1 95.00,145.00 A 4.091,4.091 0 0,1 86.82,145.00 A 4.091,4.091 0 0,1 78.64,145.00 A 4.091,4.091 0 0,1 70.45,145.00 A 4.091,4.091 0 0,1 62.27,145.00 A 4.091,4.091 0 0,1 54.09,145.00 A 4.091,4.091 0 0,1 45.91,145.00 A 4.091,4.091 0 0,1 37.73,145.00 A 4.091,4.091 0 0,1 29.55,145.00 A 4.091,4.091 0 0,1 21.36,145.00 A 4.091,4.091 0 0,1 13.18,145.00 A 4.091,4.091 0 0,1 5.00,145.00 A 3.889,3.889 0 0,1 5.00,137.22 A 3.889,3.889 0 0,1 5.00,129.44 A 3.889,3.889 0 0,1 5.00,121.67 A 3.889,3.889 0 0,1 5.00,113.89 A 3.889,3.889 0 0,1 5.00,106.11 A 3.889,3.889 0 0,1 5.00,98.33 A 3.889,3.889 0 0,1 5.00,90.56 A 3.889,3.889 0 0,1 5.00,82.78 A 3.889,3.889 0 0,1 5.00,75.00 A 3.889,3.889 0 0,1 5.00,67.22 A 3.889,3.889 0 0,1 5.00,59.44 A 3.889,3.889 0 0,1 5.00,51.67 A 3.889,3.889 0 0,1 5.00,43.89 A 3.889,3.889 0 0,1 5.00,36.11 A 3.889,3.889 0 0,1 5.00,28.33 A 3.889,3.889 0 0,1 5.00,20.56 A 3.889,3.889 0 0,1 5.00,12.78 A 3.889,3.889 0 0,1 5.00,5.00 Z M 19.00,12.00 L 81.00,12.00 A 7,7 0 0,1 88.00,19.00 L 88.00,131.00 A 7,7 0 0,1 81.00,138.00 L 19.00,138.00 A 7,7 0 0,1 12.00,131.00 L 12.00,19.00 A 7,7 0 0,1 19.00,12.00 Z"/>
+  </svg>`;
+}
+function cardBackHTML(){
+  return `${laceRingSVG()}<span class="card-back-logo"><span class="trio-word">TRIO</span></span>`;
+}
+
+let myName = '';
+let mySeat = null;
+let roomCode = null;
+let chatMessages = [];
+let chatOpen = false;
+let chatUnread = 0;
+let latestState = null;
+let showHandOverlay = false;
+let initialHand = [];
+
+socket.on('showInitialHand', (hand) => {
+  initialHand = hand;
+  showHandOverlay = true;
+  render();
+});
+
+socket.on('chatMessage', (msg) => {
+  chatMessages.push(msg);
+  if(chatMessages.length > 100) chatMessages.shift();
+  if(!chatOpen) {
+    chatUnread++;
+    const badge = document.getElementById('chat-badge');
+    if(badge){ badge.textContent = chatUnread; badge.classList.add('visible'); }
+  }
+  renderChatMessages();
+});
+
+function renderChatMessages(){
+  const el = document.getElementById('chat-msgs');
+  if(!el) return;
+  el.innerHTML = chatMessages.map(m => {
+    const mine = m.seat === mySeat;
+    return `<div class="chat-msg${mine?' mine':''}">
+      <span class="chat-name">${escapeHtml(m.name)}:</span>
+      <span class="chat-text">${escapeHtml(m.text)}</span>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function toggleChat(){
+  chatOpen = !chatOpen;
+  const box = document.getElementById('chat-box');
+  const badge = document.getElementById('chat-badge');
+  if(box) box.classList.toggle('open', chatOpen);
+  if(chatOpen){
+    chatUnread = 0;
+    if(badge){ badge.textContent = '0'; badge.classList.remove('visible'); }
+    renderChatMessages();
+    setTimeout(()=>{ const inp = document.getElementById('chat-input'); if(inp) inp.focus(); }, 50);
+  }
+}
+
+async function sendChat(){
+  if(!roomCode) return;
+  const inp = document.getElementById('chat-input');
+  if(!inp) return;
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value = '';
+  await emitAsync('chatMessage', { text });
+}
+
+function initChatWidget(){
+  const widget = document.getElementById('chat-widget');
+  if(widget) widget.style.display = roomCode ? 'block' : 'none';
+  const toggle = document.getElementById('chat-toggle');
+  if(toggle) toggle.onclick = toggleChat;
+  const sendBtn = document.getElementById('chat-send');
+  if(sendBtn) sendBtn.onclick = sendChat;
+  const inp = document.getElementById('chat-input');
+  if(inp) inp.onkeydown = (e) => { if(e.key === 'Enter') sendChat(); };
+}
+
+let homeTab = 'create';
+let homeError = '';
+let showLog = false;
+let actionInFlight = false;
+
+function cardKeyHand(seat, pos){ return 'hand:'+seat+':'+pos; }
+
+function emitAsync(event, payload){
+  return new Promise(resolve => socket.emit(event, payload, resolve));
+}
+function escapeHtml(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let frozenReveals = []; // revelações congeladas após erro (exibidas por 3s antes de sumir)
+let frozenUntil = 0;
+
+socket.on('state', (s)=>{
+  latestState = s;
+  // Quando o turno tem revelações, limpa o congelamento antigo (novo turno começou)
+  if(s.reveals && s.reveals.length > 0) frozenReveals = [];
+  render();
+});
+socket.on('gameStarted', ()=>{ frozenReveals = []; render(); });
+socket.on('turnStarted', ()=>{ render(); });
+socket.on('turnEnded', ()=>{ render(); });
+
+socket.on('cardRevealed', (info)=>{
+  // Se foi mismatch/trio: congela as revelações atuais por 3s para todos verem
+  if(!info.canContinue && latestState && latestState.reveals){
+    frozenReveals = [...(latestState.reveals || []), {
+      type: info.target ? info.target.type : 'table',
+      seat: info.target && info.target.type === 'hand' ? info.target.seat : null,
+      position: info.target && info.target.type === 'hand' ? (info.target.position || info.target.pos) : null,
+      cardId: info.cardId,
+      value: info.value
+    }];
+    frozenUntil = Date.now() + 3000;
+    setTimeout(()=>{ frozenReveals = []; render(); }, 3000);
+  }
+  render();
+});
+
+/* --------------------------------- ações --------------------------------- */
+async function createRoom(){
+  if(!myName.trim()){ homeError='Digite seu nome primeiro.'; render(); return; }
+  const res = await emitAsync('createRoom', { name: myName.trim() });
+  if(!res.ok){ homeError = res.error || 'Não deu pra criar a sala.'; render(); return; }
+  roomCode = res.code; mySeat = res.seat; homeError='';
+}
+async function joinRoom(){
+  const code = (document.getElementById('joinCode')?.value || '').trim().toUpperCase();
+  if(!myName.trim()){ homeError='Digite seu nome primeiro.'; render(); return; }
+  if(!code){ homeError='Digite o código da sala.'; render(); return; }
+  const res = await emitAsync('joinRoom', { code, name: myName.trim() });
+  if(!res.ok){ homeError = res.error || 'Não deu pra entrar.'; render(); return; }
+  roomCode = res.code; mySeat = res.seat; homeError='';
+}
+async function startGame(){
+  const res = await emitAsync('startGame', {});
+  if(!res.ok) alert(res.error);
+}
+async function targetHand(seat, position){
+  if(actionInFlight) return;
+  actionInFlight = true;
+  await emitAsync('revealCard', { type:'hand', seat, position });
+  actionInFlight = false;
+}
+async function targetTable(cardId){
+  if(actionInFlight) return;
+  actionInFlight = true;
+  await emitAsync('revealCard', { type:'table', cardId });
+  actionInFlight = false;
+}
+async function doStopTurn(){
+  if(actionInFlight) return;
+  actionInFlight = true;
+  await emitAsync('stopTurn', {});
+  actionInFlight = false;
+}
+async function addBot(){
+  const res = await emitAsync('addBot', {});
+  if(!res.ok) alert(res.error);
+}
+
+/* -------------------------------- render --------------------------------- */
+function render(){
+  const app = document.getElementById('app');
+  if(!roomCode || !latestState){ app.innerHTML = renderHome(); bindHome(); initChatWidget(); return; }
+  if(latestState.status === 'waiting'){ app.innerHTML = renderWaiting(); bindWaiting(); initChatWidget(); return; }
+  app.innerHTML = renderGame(); bindGame(); initChatWidget();
+}
+
+function renderHome(){
+  return `
+  <div class="hero">
+    <h1>TRIO</h1>
+    <div class="dots">${[1,4,7,10].map(v=>`<span style="background:var(--v${v})"></span>`).join('')}</div>
+    <p>Memória, blefe e sorte — 3 a 7 jogadores, online.</p>
+  </div>
+  <div class="panel">
+    <div class="tabbar">
+      <button id="tabCreate" class="${homeTab==='create'?'active':''}">Criar sala</button>
+      <button id="tabJoin" class="${homeTab==='join'?'active':''}">Entrar em sala</button>
+    </div>
+    ${homeError ? `<div class="error-msg">${escapeHtml(homeError)}</div>` : ''}
+    <div class="field"><label>Seu nome</label>
+      <input type="text" id="nameInput" value="${escapeHtml(myName)}" maxlength="18" placeholder="Como te chamam">
+    </div>
+    ${homeTab==='join' ? `
+      <div class="field"><label>Código da sala</label>
+        <input type="text" id="joinCode" maxlength="6" placeholder="Ex: 7XQK9" style="text-transform:uppercase; letter-spacing:3px;">
+      </div>
+      <button class="btn-primary" id="joinBtn" style="width:100%;">Entrar</button>
+    ` : `
+      <button class="btn-primary" id="createBtn" style="width:100%;">Criar sala nova</button>
+      <p class="helptext">Precisa de 3 a 7 jogadores pra começar.</p>
+    `}
+  </div>`;
+}
+function bindHome(){
+  document.getElementById('tabCreate').onclick = ()=>{ homeTab='create'; homeError=''; render(); };
+  document.getElementById('tabJoin').onclick = ()=>{ homeTab='join'; homeError=''; render(); };
+  const nameInput = document.getElementById('nameInput');
+  nameInput.oninput = e=>{ myName = e.target.value; };
+  nameInput.onkeydown = e=>{ if(e.key==='Enter'){ homeTab==='create'?createRoom():joinRoom(); } };
+  if(homeTab==='create') document.getElementById('createBtn').onclick = createRoom;
+  else{
+    document.getElementById('joinBtn').onclick = joinRoom;
+    const jc = document.getElementById('joinCode');
+    jc.oninput = e=>{ e.target.value = e.target.value.toUpperCase(); };
+    jc.onkeydown = e=>{ if(e.key==='Enter') joinRoom(); };
+  }
+  nameInput.focus();
+}
+
+function renderWaiting(){
+  const isHost = latestState.hostSocketId === socket.id;
+  const seatsHtml = Array.from({length:6}).map((_,i)=>{
+    const p = latestState.players.find(pl=>pl.seat===i);
+    if(p) return `<div class="seat-card filled">${escapeHtml(p.name)}${p.seat===mySeat?' (você)':''}${!p.connected?' — desconectado':''}</div>`;
+    if(i < 3 || i < latestState.players.length+1) return `<div class="seat-card"><span class="empty">Vaga livre</span></div>`;
+    return '';
+  }).filter(Boolean).join('');
+  const enough = latestState.players.length >= 3;
+  return `
+  <div class="hero" style="padding-top:6px;"><h1 style="font-size:28px;">Sala de espera</h1></div>
+  <div class="panel">
+    <div class="code-box">
+      <div class="label">Código — compartilhe com a galera</div>
+      <div class="code">${latestState.code}</div>
+    </div>
+    <div class="seats-grid">${seatsHtml}</div>
+    ${isHost ? `
+      <button class="btn-outline" id="addBotBtn" ${latestState.players.length>=7?'disabled':''} style="width:100%; margin-bottom:10px;">🤖 Adicionar Bot</button>
+      <button class="btn-primary" id="startBtn" ${enough?'':'disabled'} style="width:100%;">Iniciar jogo</button>
+      ${!enough ? `<p class="helptext">Precisa de pelo menos 3 jogadores.</p>` : `<p class="helptext">${latestState.players.length} jogadores prontos.</p>`}
+    ` : `<p class="helptext">Aguardando o anfitrião iniciar...</p>`}
+  </div>`;
+}
+function bindWaiting(){
+  const sb = document.getElementById('startBtn');
+  if(sb) sb.onclick = startGame;
+  const ab = document.getElementById('addBotBtn');
+  if(ab) ab.onclick = addBot;
+}
+
+// Retorna o valor revelado de uma carta, consultando o estado do servidor (ou frozenReveals)
+function getRevealValue(reveals, cardId, seat, position){
+  const list = reveals || [];
+  if(cardId){
+    const r = list.find(r => r.cardId === cardId);
+    if(r) return r.value;
+  }
+  if(seat !== undefined && position){
+    const r = list.find(r => r.type === 'hand' && r.seat === seat && r.position === position);
+    if(r) return r.value;
+  }
+  return null;
+}
+
+function cardHTML({cardId, handSeat, handPos, value, clickable, onclickAttr, dataAttrs, extraClass, forceFaceUp, reveals}){
+  const revealedVal = forceFaceUp ? value : getRevealValue(reveals||[], cardId||null, handSeat, handPos);
+  const faceUp = forceFaceUp || (revealedVal !== null && revealedVal !== undefined);
+  const val = value !== undefined ? value : revealedVal;
+  const cls = ['card']; if(faceUp) cls.push('face-up'); if(clickable) cls.push('clickable'); if(extraClass) cls.push(extraClass);
+  return `<div class="${cls.join(' ')}" data-value="${val!==null&&val!==undefined?val:''}" ${dataAttrs||''} ${onclickAttr||''}>
+    <div class="card-inner">
+      <div class="card-face card-back">${cardBackHTML()}</div>
+      <div class="card-face card-front">
+        ${val!==null&&val!==undefined ? (()=>{ const h=CORNER_HINTS[val]||{left:null,right:null}; return `${laceRingSVG()}<span class="corner corner-tl">${val}</span><span class="corner corner-tr">${val}</span><span class="card-number">${val}</span>${cornerBadge(h.left,'left')}${cornerBadge(h.right,'right')}`; })() : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderHandOverlay(){
+  if(!initialHand || !initialHand.length) return '';
+  const cardsHtml = initialHand.map(val => cardHTML({ value: val, forceFaceUp: true, extraClass: 'pop-in-card' })).join('');
+  return `<div class="overlay" style="z-index:200; backdrop-filter:blur(6px);"><div class="panel wide" style="text-align:center; max-width:600px;">
+    <h2 style="color:var(--accent); margin-bottom:15px; font-size:24px;">👀 Memorize sua mão!</h2>
+    <p style="margin-bottom:25px; line-height:1.5;">Estas são as suas cartas, ordenadas da menor para a maior.<br>Você <strong>não</strong> poderá ver as do meio depois que fechar esta janela!</p>
+    <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:30px; background:var(--panel-2); padding:20px; border-radius:12px; border:1px solid var(--line);">
+      ${cardsHtml}
+    </div>
+    <button class="btn-primary" id="closeHandBtn" style="padding:14px 40px; font-size:18px;">OK, memorizei!</button>
+  </div></div>`;
+}
+
+function renderGame(){
+  const s = latestState;
+  const myTurn = s.currentPlayer === mySeat && !s.winner;
+  const canStop = myTurn && s.turnRevealsCount >= 1;
+  const canAct = myTurn && s.turnRevealsCount < 3;
+  const initialHandHtml = showHandOverlay ? renderHandOverlay() : '';
+
+  const reveals = frozenReveals.length > 0 ? frozenReveals : (s.reveals || []);
+  const tableHtml = s.tableIds.map(id=>{
+    if (!id) return `<div class="card" style="visibility:hidden; pointer-events:none;"></div>`;
+    return cardHTML({
+      cardId: id, reveals, clickable: canAct,
+      onclickAttr: canAct ? `data-action="table" data-id="${id}"` : '',
+      dataAttrs: `data-table-id="${id}"`
+    });
+  }).join('') || `<p class="helptext">Mesa vazia.</p>`;
+
+  // ordem visual ao redor da mesa: você embaixo, os outros em ordem de assento
+  // a partir do próximo, dando a volta — não muda a lógica do jogo, só onde
+  // cada um aparece na tela.
+  const n = s.players.length;
+  const myIndex = Math.max(0, s.players.findIndex(p=>p.seat===mySeat));
+  const seatOrder = Array.from({length:n}, (_,i)=> s.players[(myIndex+i)%n]);
+  // A proporção e o raio horizontal vs vertical agora são definidos no map() abaixo.
+
+  const seatsHtml = seatOrder.map((p, i)=>{
+    const isActive = p.seat === s.currentPlayer && !s.winner;
+    let handHtml;
+    if(p.handCount === 0){
+      handHtml = '';
+    } else if(p.handCount === 1){
+      handHtml = `<div class="hand-row">${cardHTML({ handSeat:p.seat, handPos:'lowest', clickable:canAct, onclickAttr:canAct?`data-action="hand" data-seat="${p.seat}" data-pos="lowest"`:'', dataAttrs:`data-seat="${p.seat}" data-pos="lowest"`, extraClass:'fan-end' })}</div>`;
+    } else {
+      const hiddenCount = p.handCount - 2;
+      const loCard = cardHTML({ handSeat:p.seat, handPos:'lowest', clickable:canAct, onclickAttr:canAct?`data-action="hand" data-seat="${p.seat}" data-pos="lowest"`:'', dataAttrs:`data-seat="${p.seat}" data-pos="lowest"`, extraClass:'fan-end' });
+      const hiCard = cardHTML({ handSeat:p.seat, handPos:'highest', clickable:canAct, onclickAttr:canAct?`data-action="hand" data-seat="${p.seat}" data-pos="highest"`:'', dataAttrs:`data-seat="${p.seat}" data-pos="highest"`, extraClass:'fan-end' });
+      const deckWidget = hiddenCount > 0
+        ? `<div class="hidden-deck" title="${hiddenCount} carta${hiddenCount!==1?'s':''} oculta${hiddenCount!==1?'s':''}"><div class="hd-stack"><div class="hd-card"></div><div class="hd-card"></div><div class="hd-card"></div></div><span class="hd-count">${hiddenCount}</span></div>`
+        : '';
+      handHtml = `<div class="hand-row">${loCard}${deckWidget}${hiCard}</div>`;
+    }
+    const triosHtml = p.trios.length
+      ? p.trios.map(v=>{
+          const cards = Array.from({length:3}, ()=>`<div class="mini-card" data-ref="${v}">${v}</div>`).join('');
+          return `<div class="trio-group">${cards}</div>`;
+        }).join('')
+      : `<span class="no-trios">—</span>`;
+
+    const pReveals = reveals.filter(r => r.type === 'hand' && r.seat === p.seat);
+    const lowReveals = pReveals.filter(r => r.position === 'lowest');
+    const hiReveals = pReveals.filter(r => r.position === 'highest');
+    
+    const lowRevealsHtml = lowReveals.length > 0 ? `<div class="player-reveals">${lowReveals.map(r => cardHTML({ value: r.value, forceFaceUp: true, extraClass: 'pop-in-card' })).join('')}</div>` : '';
+    const hiRevealsHtml = hiReveals.length > 0 ? `<div class="player-reveals">${hiReveals.map(r => cardHTML({ value: r.value, forceFaceUp: true, extraClass: 'pop-in-card' })).join('')}</div>` : '';
+
+    // layout oval (elipse) bem espaçado
+    const angle = Math.PI / 2 + (i * 2 * Math.PI / n);
+    const radiusX = 44;
+    const radiusY = 38;
+    const cx = 50 + radiusX * Math.cos(angle);
+    const cy = 50 + radiusY * Math.sin(angle);
+    const gridStyle = `left: ${cx}%; top: ${cy}%;`;
+
+    return `<div class="seat-wrap" style="${gridStyle}">
+      <div class="player-block ${isActive?'active-turn':''}">
+        <div class="pname"><span>${escapeHtml(p.name)}${!p.connected?' 💤':''}</span>${p.seat===mySeat?'<span class="you">você</span>':''}</div>
+        <div class="trios">${triosHtml}<span class="dot-sep">·</span>${p.handCount} carta${p.handCount===1?'':'s'}</div>
+        <div class="hand-area">
+          ${lowRevealsHtml}
+          ${handHtml}
+          ${hiRevealsHtml}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const logHtml = (s.log||[]).slice(-25).reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join('');
+
+  return `
+  <style>
+    @keyframes pop-in { 0% { transform:scale(0) translateY(30px); opacity:0; } 100% { transform:scale(1) translateY(0); opacity:1; } }
+    .pop-in-card { animation: pop-in .3s ease-out; }
+  </style>
+  <div class="topbar">
+    <h2 style="font-size:20px;">Trio Online</h2>
+  </div>
+  <div class="turn-banner ${myTurn?'mine':''}">
+    ${s.winner!==null ? '🏁 Jogo encerrado' : (myTurn ? 'É a sua vez! Clique numa carta pra revelar.' : 'Vez de '+escapeHtml((s.players.find(p=>p.seat===s.currentPlayer)||{}).name||'...')+'...')}
+  </div>
+  <div class="board">
+    <div class="round-table">
+      <div class="mesa-central${s.tableIds.length ? ' has-cards' : ''}">
+        <div class="mesa-label">Mesa</div>
+        <div class="table-row">${tableHtml}</div>
+      </div>
+      ${seatsHtml}
+    </div>
+    <div class="actionbar">
+      ${canStop ? `<button class="btn-outline" id="stopBtn">Parar por aqui</button>` : ''}
+    </div>
+  </div>
+  <div class="log-toggle"><button class="link-btn" id="logToggleBtn">${showLog?'Esconder histórico':'Ver histórico'}</button></div>
+  ${showLog ? `<div class="log-panel">${logHtml}</div>` : ''}
+  ${s.winner!==null ? renderEndOverlay(s) : ''}
+  ${initialHandHtml}
+  `;
+}
+function renderEndOverlay(s){
+  const w = s.players.find(p=>p.seat===s.winner);
+  
+  let winReason = 'Fechou 3 trincas.';
+  if(w.trios.includes(7)){
+    winReason = 'Fechou a trinca do 7 — vitória instantânea!';
+  } else {
+    let connected = false;
+    for(let i=0; i<w.trios.length; i++){
+      for(let j=i+1; j<w.trios.length; j++){
+        if(w.trios[i] + w.trios[j] === 7 || Math.abs(w.trios[i] - w.trios[j]) === 7) connected = true;
+      }
+    }
+    if(connected) winReason = 'Fechou duas trincas conectadas — vitória no Modo Picante!';
+  }
+
+  return `<div class="overlay"><div class="panel">
+    <div class="hero" style="padding:0 0 6px;"><h2 style="color:var(--accent);">${escapeHtml(w.name)} venceu! 🏆</h2>
+    <p>${winReason}</p></div>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+      <button class="btn-primary" id="playAgainBtn" style="background:#4ade80; color:#064e3b; padding:14px; font-size:16px;">Jogar Novamente</button>
+      <button class="btn-outline" id="leaveRoomBtn">Sair da sala</button>
+    </div>
+  </div></div>`;
+}
+function bindGame(){
+  const logBtn = document.getElementById('logToggleBtn');
+  if(logBtn) logBtn.onclick = ()=>{ showLog=!showLog; render(); };
+  const stopBtn = document.getElementById('stopBtn');
+  if(stopBtn) stopBtn.onclick = doStopTurn;
+  document.querySelectorAll('[data-action="table"]').forEach(el=>{
+    el.onclick = ()=> targetTable(el.getAttribute('data-id'));
+  });
+  document.querySelectorAll('[data-action="hand"]').forEach(el=>{
+    el.onclick = ()=> targetHand(parseInt(el.getAttribute('data-seat'),10), el.getAttribute('data-pos'));
+  });
+  const playAgainBtn = document.getElementById('playAgainBtn');
+  if(playAgainBtn){
+    playAgainBtn.onclick = () => {
+      socket.emit('playAgain', null, (res) => {
+        if(res && res.error) alert(res.error);
+      });
+    };
+  }
+  const leaveRoomBtn = document.getElementById('leaveRoomBtn');
+  if(leaveRoomBtn){
+    leaveRoomBtn.onclick = () => {
+      socket.emit('leaveRoom', null, () => {
+        latestState = null;
+        homeTab = 'create';
+        render();
+      });
+    };
+  }
+  const closeHandBtn = document.getElementById('closeHandBtn');
+  if(closeHandBtn){
+    closeHandBtn.onclick = () => {
+      showHandOverlay = false;
+      render();
+    };
+  }
+}
+
+render();
+</script>
+</body>
+</html>
