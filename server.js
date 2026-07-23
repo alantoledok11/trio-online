@@ -21,8 +21,7 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const {
-  setupGame, startTurn, revealCard, stopTurn, TRIOS_TO_WIN, INSTANT_WIN_VALUE,
-  getHandCardAtPosition
+  setupGame, startTurn, revealCard, stopTurn, TRIOS_TO_WIN, INSTANT_WIN_VALUE
 } = require('./trio-engine.js');
 
 const PORT = process.env.PORT || 3000;
@@ -51,7 +50,7 @@ function makeRoom(code, hostSocketId){
     code,
     hostSocketId,
     status: 'waiting', // 'waiting' | 'playing'
-    players: [], // {seat, socketId, name, connected, isBot}
+    players: [], // {seat, socketId, name, connected}
     state: null  // preenchido por setupGame() quando o jogo começa
   };
 }
@@ -66,7 +65,6 @@ function publicState(room){
       seat: p.seat,
       name: p.name,
       connected: p.connected,
-      isBot: !!p.isBot,
       handCount: state ? state.players[p.seat].hand.length : null,
       trios: state ? state.players[p.seat].trios : []
     })),
@@ -105,72 +103,6 @@ function advanceTurnIfNeeded(room){
     startTurn(state);
     io.to(room.code).emit('turnStarted', { player: state.currentPlayer });
   }
-  botPlay(room);
-}
-
-function botPlay(room){
-  const state = room.state;
-  if(!state || state.winner) return;
-  const turn = state.turn;
-  if(!turn) return;
-
-  const cp = room.players.find(p => p.seat === state.currentPlayer);
-  if(!cp || !cp.isBot) return;
-
-  // 3.5s se for início de turno do bot (dá tempo dos jogadores verem o mismatch anterior),
-  // 1.8s nas jogadas seguintes do mesmo turno
-  const delay = (turn.reveals.length === 0) ? 3500 : 1800;
-  setTimeout(() => {
-    // verifica se o turno ainda é do bot (o estado pode ter mudado)
-    if(room.state !== state || !state.turn || state.turn.player !== cp.seat) return;
-
-    // pega alvos válidos (mesa que não foi revelada + cartas extremas não reveladas)
-    const targets = [];
-    for(const c of state.table){
-      if(!state.turn.revealedIds.includes(c.id)) targets.push({ type:'table', cardId:c.id });
-    }
-    for(const p of state.players){
-      if(p.hand.length > 0){
-        const loCard = getHandCardAtPosition(state, p, 'lowest');
-        if(loCard && !state.turn.revealedIds.includes(loCard.id)) targets.push({ type:'hand', seat:p.seat, position:'lowest' });
-        if(p.hand.length > 1){
-          const hiCard = getHandCardAtPosition(state, p, 'highest');
-          if(hiCard && !state.turn.revealedIds.includes(hiCard.id)) targets.push({ type:'hand', seat:p.seat, position:'highest' });
-        }
-      }
-    }
-
-    if(targets.length === 0){
-      stopTurn(state);
-      io.to(room.code).emit('turnEnded', { by: cp.seat });
-      advanceTurnIfNeeded(room);
-      broadcastState(room);
-      return;
-    }
-
-    // escolha burra aleatória (Dumb Bot)
-    const target = targets[Math.floor(Math.random()*targets.length)];
-
-    let result;
-    try { result = revealCard(state, target); } catch(e) { return; }
-
-    io.to(room.code).emit('cardRevealed', {
-      by: cp.seat,
-      target,
-      cardId: result.card.id,
-      value: result.card.value,
-      status: result.status,
-      canContinue: result.canContinue,
-      trioValue: result.value
-    });
-
-    advanceTurnIfNeeded(room);
-    broadcastState(room);
-
-    if(result.canContinue && state.turn && state.turn.player === cp.seat){
-      botPlay(room);
-    }
-  }, delay);
 }
 
 io.on('connection', (socket) => {
@@ -209,21 +141,6 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('addBot', (_payload, ack) => {
-    const room = findRoomOfSocket(socket);
-    if(!room) return ack && ack({ ok:false, error:'Você não está em uma sala.' });
-    if(room.hostSocketId !== socket.id) return ack && ack({ ok:false, error:'Só o anfitrião pode adicionar bots.' });
-    if(room.status !== 'waiting') return ack && ack({ ok:false, error:'Esse jogo já começou.' });
-    if(room.players.length >= MAX_PLAYERS) return ack && ack({ ok:false, error:'Sala cheia.' });
-
-    const seat = room.players.length;
-    const botNum = room.players.filter(p => p.isBot).length + 1;
-    room.players.push({ seat, socketId: 'bot_'+Date.now()+'_'+Math.random(), name: 'Bot '+botNum, connected: true, isBot: true });
-
-    ack && ack({ ok:true });
-    broadcastState(room);
-  });
-
   socket.on('startGame', (_payload, ack) => {
     const room = findRoomOfSocket(socket);
     if(!room) return ack && ack({ ok:false, error:'Você não está em uma sala.' });
@@ -240,7 +157,7 @@ io.on('connection', (socket) => {
       io.to(room.code).emit('gameStarted');
       // Envia a mão completa para os jogadores humanos memorizarem
       for(const p of room.players) {
-        if(!p.isBot && p.connected) {
+        if(p.connected) {
           const statePlayer = state.players[p.seat];
           if (statePlayer && statePlayer.hand) {
             const sorted = statePlayer.hand.map(c => c.value).sort((a,b)=>a-b);
@@ -317,13 +234,12 @@ io.on('connection', (socket) => {
     const room = findRoomOfSocket(socket);
     if(room) {
       room.players = room.players.filter(p => p.socketId !== socket.id);
-      if(room.players.length === 0 || room.players.every(p => p.isBot)) {
+      if(room.players.length === 0) {
         delete rooms[room.code];
       } else {
-        // Se o host saiu, tenta passar o host para outro humano
+        // Se o host saiu, passa o host para o próximo jogador
         if (room.hostSocketId === socket.id) {
-          const nextHost = room.players.find(p => !p.isBot);
-          if (nextHost) room.hostSocketId = nextHost.socketId;
+          room.hostSocketId = room.players[0].socketId;
         }
         broadcastState(room);
       }

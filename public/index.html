@@ -539,11 +539,6 @@ async function doStopTurn(){
   await emitAsync('stopTurn', {});
   actionInFlight = false;
 }
-async function addBot(){
-  const res = await emitAsync('addBot', {});
-  if(!res.ok) alert(res.error);
-}
-
 /* -------------------------------- render --------------------------------- */
 function render(){
   const app = document.getElementById('app');
@@ -613,7 +608,6 @@ function renderWaiting(){
     </div>
     <div class="seats-grid">${seatsHtml}</div>
     ${isHost ? `
-      <button class="btn-outline" id="addBotBtn" ${latestState.players.length>=7?'disabled':''} style="width:100%; margin-bottom:10px;">🤖 Adicionar Bot</button>
       <button class="btn-primary" id="startBtn" ${enough?'':'disabled'} style="width:100%;">Iniciar jogo</button>
       ${!enough ? `<p class="helptext">Precisa de pelo menos 3 jogadores.</p>` : `<p class="helptext">${latestState.players.length} jogadores prontos.</p>`}
     ` : `<p class="helptext">Aguardando o anfitrião iniciar...</p>`}
@@ -622,8 +616,6 @@ function renderWaiting(){
 function bindWaiting(){
   const sb = document.getElementById('startBtn');
   if(sb) sb.onclick = startGame;
-  const ab = document.getElementById('addBotBtn');
-  if(ab) ab.onclick = addBot;
 }
 
 // Retorna o valor revelado de uma carta, consultando o estado do servidor (ou frozenReveals)
