@@ -139,25 +139,22 @@
   }
   .round-table .seat-wrap .player-block{ width:100%; }
 
+  .table-scroll{ width:100%; }
   @media (max-width:760px){
-    /* Mantém a mesa oval igual ao PC (mesma fórmula de posição), só encolhe
-       tudo pra caber na largura estreita do celular em vez de virar lista. */
-    .round-table{ aspect-ratio: 2/3; max-width: 420px; margin: 14px auto; }
-    .round-table[data-players="5"], .round-table[data-players="6"], .round-table[data-players="7"]{ aspect-ratio: 1/2; }
-
-    .round-table .mesa-central{
-      width: clamp(120px, 34vw, 170px); height: clamp(120px, 34vw, 170px);
-      --card-w: clamp(20px, 4.5vw, 28px); padding: 8px;
+    /* Numa tela estreita não tem largura suficiente pra espalhar 4-7
+       assentos ao redor da mesa sem que algum fique perto demais da
+       borda (testado: sempre sobra alguém cortado). Em vez de encolher
+       tudo até ficar ilegível, mantém a mesa no tamanho legível (igual
+       ao PC) e deixa essa faixa rolar de lado — arrasta o dedo pra ver
+       quem ficou fora da tela. */
+    .table-scroll{
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 14px -18px 0;
+      padding: 0 18px 8px;
     }
-    .round-table .seat-wrap{ max-width: 38vw; }
-    .round-table[data-players="5"] .seat-wrap, .round-table[data-players="6"] .seat-wrap, .round-table[data-players="7"] .seat-wrap{ max-width: 30vw; }
-
-    .player-block{ --card-w: clamp(24px, 6vw, 32px); padding: 6px 7px; }
-    .round-table[data-players="5"] .player-block, .round-table[data-players="6"] .player-block, .round-table[data-players="7"] .player-block{ --card-w: clamp(20px, 5vw, 26px); padding: 4px 5px; }
-    .player-block .pname{ font-size: 11px; margin-bottom: 3px; }
-    .player-block .trios{ font-size: 9px; margin: 1px 0 4px; }
-    .hand-area{ gap: 5px; }
-    .hand-row{ gap: 4px; }
+    .round-table{ width: 640px; max-width: none; aspect-ratio: 16/10; margin: 0 auto; flex: none; }
+    .round-table .mesa-central{ width: clamp(140px, 30vw, 190px); height: clamp(140px, 30vw, 190px); }
   }
 
   .player-block{
@@ -754,8 +751,12 @@ function renderGame(){
     const hiRevealsHtml = hiReveals.length > 0 ? `<div class="player-reveals">${hiReveals.map(r => cardHTML({ value: r.value, forceFaceUp: true, extraClass: 'pop-in-card' })).join('')}</div>` : '';
 
     // layout oval (elipse) bem espaçado
+    // no celular a faixa rola de lado (.table-scroll), mas o raio horizontal
+    // ainda precisa ser menor pra nenhum assento nascer perto demais da
+    // borda do canvas de 640px (senão sobrepõe a mesa ou passa da borda)
+    const isMobileLayout = window.innerWidth <= 760;
     const angle = Math.PI / 2 + (i * 2 * Math.PI / n);
-    const radiusX = 44;
+    const radiusX = isMobileLayout ? 30 : 44;
     const radiusY = 38;
     const cx = 50 + radiusX * Math.cos(angle);
     const cy = 50 + radiusY * Math.sin(angle);
@@ -788,12 +789,14 @@ function renderGame(){
     ${s.winner!==null ? '🏁 Jogo encerrado' : (myTurn ? 'É a sua vez! Clique numa carta pra revelar.' : 'Vez de '+escapeHtml((s.players.find(p=>p.seat===s.currentPlayer)||{}).name||'...')+'...')}
   </div>
   <div class="board">
-    <div class="round-table" data-players="${n}">
-      <div class="mesa-central${s.tableIds.length ? ' has-cards' : ''}">
-        <div class="mesa-label">Mesa</div>
-        <div class="table-row">${tableHtml}</div>
+    <div class="table-scroll">
+      <div class="round-table">
+        <div class="mesa-central${s.tableIds.length ? ' has-cards' : ''}">
+          <div class="mesa-label">Mesa</div>
+          <div class="table-row">${tableHtml}</div>
+        </div>
+        ${seatsHtml}
       </div>
-      ${seatsHtml}
     </div>
     <div class="actionbar">
       ${canStop ? `<button class="btn-outline" id="stopBtn">Parar por aqui</button>` : ''}
