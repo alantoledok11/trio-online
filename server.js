@@ -67,6 +67,7 @@ function publicState(room){
       seat: p.seat,
       name: p.name,
       connected: p.connected,
+      wantsRematch: !!p.wantsRematch,
       handCount: state ? state.players[p.seat].hand.length : null,
       trios: state ? state.players[p.seat].trios : []
     })),
@@ -211,6 +212,7 @@ io.on('connection', (socket) => {
       startTurn(state);
       room.state = state;
       room.status = 'playing';
+      for(const p of room.players) p.wantsRematch = false;
       ack && ack({ ok:true });
       io.to(room.code).emit('gameStarted');
       // Envia a mão completa para os jogadores humanos memorizarem
@@ -280,11 +282,21 @@ io.on('connection', (socket) => {
     const room = findRoomOfSocket(socket);
     if(!room) return ack && ack({ ok:false, error:'Sala não encontrada.' });
     if(room.status !== 'playing') return ack && ack({ ok:false, error:'O jogo não está em andamento.' });
-    
-    // Volta para o modo sala de espera (lobby)
-    clearTurnTimer(room);
-    room.status = 'waiting';
-    room.state = null;
+    if(!room.state || room.state.winner === null) return ack && ack({ ok:false, error:'O jogo ainda não terminou.' });
+
+    // Não volta pra sala de espera assim que UMA pessoa clica -- marca o
+    // voto desse jogador e só reseta quando todo mundo que está conectado
+    // também tiver topado. Até lá, o placar de quem já topou aparece pra
+    // todo mundo ver na tela de vitória.
+    const player = room.players.find(p => p.socketId === socket.id);
+    if(player) player.wantsRematch = true;
+
+    const everyoneReady = room.players.filter(p => p.connected).every(p => p.wantsRematch);
+    if(everyoneReady){
+      clearTurnTimer(room);
+      room.status = 'waiting';
+      room.state = null;
+    }
 
     ack && ack({ ok:true });
     broadcastState(room);
