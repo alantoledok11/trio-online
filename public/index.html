@@ -734,7 +734,7 @@ function cardHTML({cardId, handSeat, handPos, value, clickable, onclickAttr, dat
 
 function renderHandOverlay(){
   if(!initialHand || !initialHand.length) return '';
-  const cardsHtml = initialHand.map(val => cardHTML({ value: val, forceFaceUp: true, extraClass: 'pop-in-card' })).join('');
+  const cardsHtml = initialHand.map(val => `<div class="pop-in-wrap">${cardHTML({ value: val, forceFaceUp: true })}</div>`).join('');
   return `<div class="overlay" style="z-index:200; backdrop-filter:blur(6px);"><div class="panel wide" style="text-align:center; max-width:600px;">
     <h2 style="color:var(--accent); margin-bottom:15px; font-size:24px;">👀 Memorize sua mão!</h2>
     <p style="margin-bottom:25px; line-height:1.5;">Estas são as suas cartas, ordenadas da menor para a maior.<br>Você <strong>não</strong> poderá ver as do meio depois que fechar esta janela!</p>
@@ -804,8 +804,8 @@ function renderGame(){
     const lowReveals = pReveals.filter(r => r.position === 'lowest');
     const hiReveals = pReveals.filter(r => r.position === 'highest');
     
-    const lowRevealsHtml = lowReveals.length > 0 ? `<div class="player-reveals">${lowReveals.map(r => `<div class="reveal-item"><span class="reveal-tag">Menor</span>${cardHTML({ value: r.value, forceFaceUp: true, extraClass: 'pop-in-card' })}</div>`).join('')}</div>` : '';
-    const hiRevealsHtml = hiReveals.length > 0 ? `<div class="player-reveals">${hiReveals.map(r => `<div class="reveal-item"><span class="reveal-tag">Maior</span>${cardHTML({ value: r.value, forceFaceUp: true, extraClass: 'pop-in-card' })}</div>`).join('')}</div>` : '';
+    const lowRevealsHtml = lowReveals.length > 0 ? `<div class="player-reveals">${lowReveals.map(r => `<div class="reveal-item"><span class="reveal-tag">Menor</span><div class="pop-in-wrap">${cardHTML({ value: r.value, forceFaceUp: true })}</div></div>`).join('')}</div>` : '';
+    const hiRevealsHtml = hiReveals.length > 0 ? `<div class="player-reveals">${hiReveals.map(r => `<div class="reveal-item"><span class="reveal-tag">Maior</span><div class="pop-in-wrap">${cardHTML({ value: r.value, forceFaceUp: true })}</div></div>`).join('')}</div>` : '';
 
     // layout oval (elipse) bem espaçado
     // no celular o raio horizontal encolhe pra 32% (era 44%, igual ao PC) --
@@ -838,7 +838,11 @@ function renderGame(){
   return `
   <style>
     @keyframes pop-in { 0% { transform:scale(0) translateY(30px); opacity:0; } 100% { transform:scale(1) translateY(0); opacity:1; } }
-    .pop-in-card { animation: pop-in .3s ease-out; }
+    /* a animação de entrada precisa ficar num wrapper FORA do .card -- se
+       aplicada no próprio .card (que tem perspective:900px pro giro 3D),
+       o Safari às vezes erra o cálculo de qual face esconder, deixando o
+       verso ("TRIO") vazar por cima do número mesmo depois do giro parar. */
+    .pop-in-wrap { display:inline-block; animation: pop-in .3s ease-out; }
   </style>
   <div class="topbar">
     <h2 style="font-size:20px;">Trio Online</h2>
