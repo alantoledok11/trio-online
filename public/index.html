@@ -204,7 +204,11 @@
   .hidden-icon{ font-size:calc(var(--card-w)*0.55); color:var(--text-dim); line-height:1; flex:0 0 auto; }
   .trios{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .trio-group{ display:flex; gap:2px; }
-  .mini-card{ width:30px; height:44px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.6); text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .mini-card{ position:relative; width:30px; height:44px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.6); text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  /* numerozinho de canto, igual a carta grande tem (ex: valor 1 mostra 6/8) --
+     mini-carta da trinca fechada não tinha isso */
+  .mini-hint{ position:absolute; top:2px; font-size:8px; font-weight:800; line-height:1; opacity:.85; }
+  .mini-hint.left{ left:2px; } .mini-hint.right{ right:2px; }
   .mini-card[data-ref="1"], .mini-card[data-ref="2"], .mini-card[data-ref="7"]{ color:var(--ink-dark); text-shadow:none; }
   .mini-card[data-ref="1"]{ background:var(--v1); } .mini-card[data-ref="2"]{ background:var(--v2); }
   .mini-card[data-ref="3"]{ background:var(--v3); } .mini-card[data-ref="4"]{ background:var(--v4); }
@@ -259,6 +263,8 @@
        encolhiam -- jogador com trinca fechada ficava com bloco bem mais
        largo que o previsto, empurrando os vizinhos */
     .mini-card{ width:16px; height:24px; font-size:9px; border-radius:3px; }
+    .mini-hint{ font-size:6px; top:1px; }
+    .mini-hint.left{ left:1px; } .mini-hint.right{ right:1px; }
     .trio-group{ gap:1px; }
     .round-table[data-players="5"] .mini-card, .round-table[data-players="6"] .mini-card, .round-table[data-players="7"] .mini-card{ width:15px; height:22px; font-size:8px; }
   }
@@ -783,7 +789,9 @@ function renderGame(){
     }
     const triosHtml = p.trios.length
       ? p.trios.map(v=>{
-          const cards = Array.from({length:3}, ()=>`<div class="mini-card" data-ref="${v}">${v}</div>`).join('');
+          const h = CORNER_HINTS[v] || {left:null, right:null};
+          const hint = `${h.left!=null?`<span class="mini-hint left">${h.left}</span>`:''}${h.right!=null?`<span class="mini-hint right">${h.right}</span>`:''}`;
+          const cards = Array.from({length:3}, ()=>`<div class="mini-card" data-ref="${v}">${hint}${v}</div>`).join('');
           return `<div class="trio-group">${cards}</div>`;
         }).join('')
       : `<span class="no-trios">—</span>`;
