@@ -211,7 +211,19 @@
   .log-panel{ max-height:150px; overflow-y:auto; background:var(--panel-2); border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--text-dim); }
   .log-panel div{ padding:3px 0; border-bottom:1px dashed var(--line); }
 
-  .overlay{ position:fixed; inset:0; background:rgba(10,10,16,.75); display:flex; align-items:center; justify-content:center; z-index:50; padding:20px; }
+  .overlay{ position:fixed; inset:0; background:rgba(10,10,16,.75); display:flex; justify-content:center; z-index:50; padding:20px; overflow-y:auto; }
+  /* margem vertical auto: centraliza quando cabe, mas nunca corta o topo quando o conteúdo é mais alto que a tela (aí vira scroll) */
+  .overlay > .panel{ margin-top:auto; margin-bottom:auto; }
+
+  .memorize-cards{
+    display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
+    margin-bottom:30px; background:var(--panel-2); padding:20px;
+    border-radius:12px; border:1px solid var(--line);
+    --card-w: clamp(56px, 11vw, 84px);
+  }
+  @media (max-width:480px){
+    .memorize-cards{ --card-w: clamp(42px, 14vw, 58px); gap:6px; padding:14px 10px; }
+  }
 
   /* ---- carta (mesmo componente já validado) ---- */
   .card{ width:var(--card-w); height:calc(var(--card-w) * 1.5); perspective:900px; }
@@ -653,7 +665,7 @@ function renderHandOverlay(){
   return `<div class="overlay" style="z-index:200; backdrop-filter:blur(6px);"><div class="panel wide" style="text-align:center; max-width:600px;">
     <h2 style="color:var(--accent); margin-bottom:15px; font-size:24px;">👀 Memorize sua mão!</h2>
     <p style="margin-bottom:25px; line-height:1.5;">Estas são as suas cartas, ordenadas da menor para a maior.<br>Você <strong>não</strong> poderá ver as do meio depois que fechar esta janela!</p>
-    <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:30px; background:var(--panel-2); padding:20px; border-radius:12px; border:1px solid var(--line);">
+    <div class="memorize-cards">
       ${cardsHtml}
     </div>
     <button class="btn-primary" id="closeHandBtn" style="padding:14px 40px; font-size:18px;">OK, memorizei!</button>
