@@ -139,42 +139,12 @@
   }
   .round-table .seat-wrap .player-block{ width:100%; }
 
-  @media (max-width:760px){
-    /* Sem rolagem: mesa e blocos encolhem E o raio de espalhamento da
-       elipse (44% no PC) cai pra 32% só aqui. É a combinação dos dois que
-       garante que nenhum assento nasce perto demais da borda nem esbarra
-       na mesa -- só encolher os blocos (como nas tentativas anteriores)
-       não bastava, porque o raio continuava empurrando alguém até a beira
-       da tela. Contas feitas pra caber numa largura útil de ~340px. */
-    .round-table{ aspect-ratio: 3/4; max-width: 400px; margin: 14px auto; }
-    .round-table[data-players="5"], .round-table[data-players="6"], .round-table[data-players="7"]{ aspect-ratio: 2/3; }
-
-    .round-table .mesa-central{
-      width: clamp(110px, 32vw, 150px); height: clamp(110px, 32vw, 150px);
-      --card-w: clamp(18px, 4vw, 24px); padding: 6px;
-    }
-    .round-table .seat-wrap{ max-width: 34vw; }
-    .round-table[data-players="5"] .seat-wrap, .round-table[data-players="6"] .seat-wrap, .round-table[data-players="7"] .seat-wrap{ max-width: 28vw; }
-
-    .player-block{ --card-w: clamp(22px, 5.5vw, 28px); padding: 5px 6px; }
-    .round-table[data-players="5"] .player-block, .round-table[data-players="6"] .player-block, .round-table[data-players="7"] .player-block{ --card-w: clamp(24px, 6vw, 30px); padding: 5px 6px; }
-    .player-block .pname{ font-size: 10px; margin-bottom: 2px; }
-    .player-block .trios{ font-size: 8px; margin: 1px 0 3px; gap: 4px; }
-    .hand-row{ gap: 3px; }
-    /* quando uma carta é revelada, cartas extras de "pop-up" (.player-reveals)
-       entram no mesmo hand-area -- no PC/desktop isso não é problema porque
-       sobra espaço, mas no celular isso alargava o bloco além da largura
-       calculada e esmagava a mesa/vizinhos. Agora quebra linha em vez de
-       alargar: o bloco cresce pra baixo, não pros lados. */
-    .hand-area{ gap: 4px; flex-wrap: wrap; }
-    /* as mini-cartas da trinca tinham tamanho fixo (30px) e não encolhiam --
-       jogador com trinca fechada ficava com bloco bem mais largo que o
-       previsto, empurrando os vizinhos (causa real da sobreposição/corte
-       na borda em jogos com trincas já fechadas) */
-    .mini-card{ width:16px; height:24px; font-size:9px; border-radius:3px; }
-    .trio-group{ gap:1px; }
-    .round-table[data-players="5"] .mini-card, .round-table[data-players="6"] .mini-card, .round-table[data-players="7"] .mini-card{ width:13px; height:19px; font-size:7px; }
-  }
+  /* Ajustes de mobile pro tabuleiro/blocos de jogador ficam consolidados
+     num único @media no fim deste bloco de <style> (perto de .trios),
+     depois de TODAS as regras base que eles precisam sobrescrever --
+     regra base e @media com a mesma especificidade decidem por ordem no
+     arquivo, então um @media antes da regra base que ele tenta mudar
+     simplesmente perde (foi isso que quebrou várias tentativas aqui). */
 
   .player-block{
     background: var(--panel-2);
@@ -236,6 +206,43 @@
   .mini-card[data-ref="11"]{ background:var(--v11); } .mini-card[data-ref="12"]{ background:var(--v12); }
   .trios .no-trios{ color:var(--text-dim); }
   .trios .dot-sep{ color:var(--text-dim); margin:0 2px; }
+
+  @media (max-width:760px){
+    /* Sem rolagem: mesa e blocos encolhem E o raio de espalhamento da
+       elipse (44% no PC) cai pra 32% só aqui. É a combinação dos dois que
+       garante que nenhum assento nasce perto demais da borda nem esbarra
+       na mesa -- só encolher os blocos não bastava, porque o raio
+       continuava empurrando alguém até a beira da tela. Contas feitas pra
+       caber numa largura útil de ~340px. */
+    .round-table{ aspect-ratio: 3/4; max-width: 400px; margin: 14px auto; }
+    .round-table[data-players="5"], .round-table[data-players="6"], .round-table[data-players="7"]{ aspect-ratio: 2/3; }
+
+    .round-table .mesa-central{
+      width: clamp(110px, 32vw, 150px); height: clamp(110px, 32vw, 150px);
+      --card-w: clamp(18px, 4vw, 24px); padding: 6px;
+    }
+    .round-table .seat-wrap{ max-width: 34vw; }
+    .round-table[data-players="5"] .seat-wrap, .round-table[data-players="6"] .seat-wrap, .round-table[data-players="7"] .seat-wrap{ max-width: 28vw; }
+
+    /* mesma escala de carta da mesa (--card-w acima) -- antes o bloco do
+       jogador usava uma escala maior que a da mesa */
+    .player-block{ --card-w: clamp(18px, 4vw, 24px); padding: 5px 6px; }
+    .player-block .pname{ font-size: 10px; margin-bottom: 2px; }
+    .player-block .trios{ font-size: 8px; margin: 1px 0 3px; gap: 4px; }
+    .hand-row{ gap: 3px; }
+    /* quando uma carta é revelada, cartas extras de "pop-up" (.player-reveals)
+       entram no mesmo hand-area -- no PC isso não é problema (sobra
+       espaço), mas no celular isso alargava o bloco além da largura
+       calculada e esmagava a mesa/vizinhos. Agora quebra linha em vez de
+       alargar: o bloco cresce pra baixo, não pros lados. */
+    .hand-area{ gap: 4px; flex-wrap: wrap; }
+    /* as mini-cartas da trinca tinham tamanho fixo (30px) e não
+       encolhiam -- jogador com trinca fechada ficava com bloco bem mais
+       largo que o previsto, empurrando os vizinhos */
+    .mini-card{ width:16px; height:24px; font-size:9px; border-radius:3px; }
+    .trio-group{ gap:1px; }
+    .round-table[data-players="5"] .mini-card, .round-table[data-players="6"] .mini-card, .round-table[data-players="7"] .mini-card{ width:13px; height:19px; font-size:7px; }
+  }
 
   .actionbar{ display:flex; justify-content:center; gap:10px; margin-top:16px; }
   .log-toggle{ text-align:center; margin-top:12px; }
