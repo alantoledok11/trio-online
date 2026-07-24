@@ -139,22 +139,11 @@
   }
   .round-table .seat-wrap .player-block{ width:100%; }
 
-  .table-scroll{ width:100%; }
   @media (max-width:760px){
-    /* Numa tela estreita não tem largura suficiente pra espalhar 4-7
-       assentos ao redor da mesa sem que algum fique perto demais da
-       borda (testado: sempre sobra alguém cortado). Em vez de encolher
-       tudo até ficar ilegível, mantém a mesa no tamanho legível (igual
-       ao PC) e deixa essa faixa rolar de lado — arrasta o dedo pra ver
-       quem ficou fora da tela. */
-    .table-scroll{
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      margin: 14px -18px 0;
-      padding: 0 18px 8px;
-    }
-    .round-table{ width: 640px; max-width: none; aspect-ratio: 16/10; margin: 0 auto; flex: none; }
-    .round-table .mesa-central{ width: clamp(140px, 30vw, 190px); height: clamp(140px, 30vw, 190px); }
+    .round-table{ aspect-ratio: auto; min-height: 80vh; display: flex; flex-direction: column; gap: 12px; margin: 10px auto; }
+    .round-table .mesa-central{ position: relative; top: 0; left: 0; transform: none; width: 100%; border-radius: 14px; order: -1; aspect-ratio: auto; height: auto; padding: 30px; }
+    .round-table .seat-wrap{ position: relative; left: 0 !important; top: 0 !important; transform: none; width: 100%; align-self: stretch; }
+    .player-block { border-radius: 12px; height: auto; width: 100%; }
   }
 
   .player-block{
@@ -751,12 +740,8 @@ function renderGame(){
     const hiRevealsHtml = hiReveals.length > 0 ? `<div class="player-reveals">${hiReveals.map(r => cardHTML({ value: r.value, forceFaceUp: true, extraClass: 'pop-in-card' })).join('')}</div>` : '';
 
     // layout oval (elipse) bem espaçado
-    // no celular a faixa rola de lado (.table-scroll), mas o raio horizontal
-    // ainda precisa ser menor pra nenhum assento nascer perto demais da
-    // borda do canvas de 640px (senão sobrepõe a mesa ou passa da borda)
-    const isMobileLayout = window.innerWidth <= 760;
     const angle = Math.PI / 2 + (i * 2 * Math.PI / n);
-    const radiusX = isMobileLayout ? 30 : 44;
+    const radiusX = 44;
     const radiusY = 38;
     const cx = 50 + radiusX * Math.cos(angle);
     const cy = 50 + radiusY * Math.sin(angle);
@@ -789,14 +774,12 @@ function renderGame(){
     ${s.winner!==null ? '🏁 Jogo encerrado' : (myTurn ? 'É a sua vez! Clique numa carta pra revelar.' : 'Vez de '+escapeHtml((s.players.find(p=>p.seat===s.currentPlayer)||{}).name||'...')+'...')}
   </div>
   <div class="board">
-    <div class="table-scroll">
-      <div class="round-table">
-        <div class="mesa-central${s.tableIds.length ? ' has-cards' : ''}">
-          <div class="mesa-label">Mesa</div>
-          <div class="table-row">${tableHtml}</div>
-        </div>
-        ${seatsHtml}
+    <div class="round-table">
+      <div class="mesa-central${s.tableIds.length ? ' has-cards' : ''}">
+        <div class="mesa-label">Mesa</div>
+        <div class="table-row">${tableHtml}</div>
       </div>
+      ${seatsHtml}
     </div>
     <div class="actionbar">
       ${canStop ? `<button class="btn-outline" id="stopBtn">Parar por aqui</button>` : ''}
