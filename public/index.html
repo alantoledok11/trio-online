@@ -234,18 +234,20 @@
        sobrar tanto espaço solto. */
     .round-table[data-players="5"], .round-table[data-players="6"], .round-table[data-players="7"]{ aspect-ratio: 7/10; }
 
+    /* aumentado (era 110-150/18-24) -- sobrava espaço vazio de sobra pra
+       3-4 jogadores, dava pra ler melhor sem perder a margem de segurança */
     .round-table .mesa-central{
-      width: clamp(110px, 32vw, 150px); height: clamp(110px, 32vw, 150px);
-      --card-w: clamp(18px, 4vw, 24px); padding: 6px;
+      width: clamp(125px, 33vw, 165px); height: clamp(125px, 33vw, 165px);
+      --card-w: clamp(22px, 5vw, 28px); padding: 6px;
     }
-    .round-table .seat-wrap{ max-width: 34vw; }
+    .round-table .seat-wrap{ max-width: 36vw; }
     .round-table[data-players="5"] .seat-wrap, .round-table[data-players="6"] .seat-wrap, .round-table[data-players="7"] .seat-wrap{ max-width: 28vw; }
 
     /* mesma escala de carta da mesa (--card-w acima) -- antes o bloco do
        jogador usava uma escala maior que a da mesa */
-    .player-block{ --card-w: clamp(18px, 4vw, 24px); padding: 5px 6px; }
-    .player-block .pname{ font-size: 10px; margin-bottom: 2px; }
-    .player-block .trios{ font-size: 8px; margin: 1px 0 3px; gap: 4px; }
+    .player-block{ --card-w: clamp(22px, 5vw, 28px); padding: 5px 6px; }
+    .player-block .pname{ font-size: 11px; margin-bottom: 2px; }
+    .player-block .trios{ font-size: 9px; margin: 1px 0 3px; gap: 4px; }
     .hand-row{ gap: 3px; }
     /* quando uma carta é revelada, cartas extras de "pop-up" (.player-reveals)
        entram no mesmo hand-area -- no PC isso não é problema (sobra
