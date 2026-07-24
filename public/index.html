@@ -241,6 +241,12 @@
        calculada e esmagava a mesa/vizinhos. Agora quebra linha em vez de
        alargar: o bloco cresce pra baixo, não pros lados. */
     .hand-area{ gap: 4px; flex-wrap: wrap; }
+    /* .player-reveals (a fileira de cartas de "pop-up" em si) também não
+       tinha flex-wrap -- se acumularem 2-3 cartas reveladas ali (ex: mais
+       de uma revelação congelada depois de um erro), a fileira ficava
+       larga o bastante pra ultrapassar o bloco e invadir o vizinho, mesmo
+       com o hand-area já quebrando linha. */
+    .player-reveals{ flex-wrap: wrap; row-gap: 4px; }
     /* as mini-cartas da trinca tinham tamanho fixo (30px) e não
        encolhiam -- jogador com trinca fechada ficava com bloco bem mais
        largo que o previsto, empurrando os vizinhos */
@@ -250,10 +256,6 @@
   }
 
   .actionbar{ display:flex; justify-content:center; gap:10px; margin-top:16px; }
-  .log-toggle{ text-align:center; margin-top:12px; }
-  .link-btn{ background:none; border:none; color:var(--accent); text-decoration:underline; cursor:pointer; font:inherit; font-size:12px; }
-  .log-panel{ max-height:150px; overflow-y:auto; background:var(--panel-2); border-radius:8px; padding:10px 12px; margin-top:8px; font-size:12px; color:var(--text-dim); }
-  .log-panel div{ padding:3px 0; border-bottom:1px dashed var(--line); }
 
   .overlay{ position:fixed; inset:0; background:rgba(10,10,16,.75); display:flex; justify-content:center; z-index:50; padding:20px; overflow-y:auto; }
   /* margem vertical auto: centraliza quando cabe, mas nunca corta o topo quando o conteúdo é mais alto que a tela (aí vira scroll) */
@@ -509,7 +511,6 @@ function initChatWidget(){
 const deepLinkCode = (new URLSearchParams(window.location.search).get('code') || '').trim().toUpperCase().slice(0,6);
 let homeTab = deepLinkCode ? 'join' : 'create';
 let homeError = '';
-let showLog = false;
 let actionInFlight = false;
 
 function cardKeyHand(seat, pos){ return 'hand:'+seat+':'+pos; }
@@ -809,8 +810,6 @@ function renderGame(){
     </div>`;
   }).join('');
 
-  const logHtml = (s.log||[]).slice(-25).reverse().map(l=>`<div>${escapeHtml(l)}</div>`).join('');
-
   return `
   <style>
     @keyframes pop-in { 0% { transform:scale(0) translateY(30px); opacity:0; } 100% { transform:scale(1) translateY(0); opacity:1; } }
@@ -834,8 +833,6 @@ function renderGame(){
       ${canStop ? `<button class="btn-outline" id="stopBtn">Parar por aqui</button>` : ''}
     </div>
   </div>
-  <div class="log-toggle"><button class="link-btn" id="logToggleBtn">${showLog?'Esconder histórico':'Ver histórico'}</button></div>
-  ${showLog ? `<div class="log-panel">${logHtml}</div>` : ''}
   ${s.winner!==null ? renderEndOverlay(s) : ''}
   ${initialHandHtml}
   `;
@@ -866,8 +863,6 @@ function renderEndOverlay(s){
   </div></div>`;
 }
 function bindGame(){
-  const logBtn = document.getElementById('logToggleBtn');
-  if(logBtn) logBtn.onclick = ()=>{ showLog=!showLog; render(); };
   const stopBtn = document.getElementById('stopBtn');
   if(stopBtn) stopBtn.onclick = doStopTurn;
   document.querySelectorAll('[data-action="table"]').forEach(el=>{
