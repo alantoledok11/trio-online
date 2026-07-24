@@ -101,12 +101,13 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    /* Ajustado para não sobrepor em telas menores */
-    width: clamp(230px, 36vw, 360px);
-    height: clamp(230px, 36vw, 360px);
+    /* Ajustado para não sobrepor em telas menores (teto aumentado -- batia
+       o limite bem antes de usar a largura de um monitor grande) */
+    width: clamp(230px, 36vw, 460px);
+    height: clamp(230px, 36vw, 460px);
     border-radius: 50%;
     /* Diminui a carta da mesa para caber bem o grid de até 9 cartas */
-    --card-w: clamp(36px, 5vw, 54px);
+    --card-w: clamp(36px, 5vw, 70px);
     background: transparent;
     padding: 18px;
   }
@@ -146,9 +147,11 @@
   .player-block{
     background: var(--panel-2);
     border-radius: 12px;
-    padding: 10px;
-    /* Reduz as cartas dos jogadores para que 7 caibam bem sem amontoar */
-    --card-w: clamp(40px, 6vw, 56px);
+    padding: 14px;
+    /* Reduz as cartas dos jogadores para que 7 caibam bem sem amontoar
+       (mas o teto (56px) batia bem antes de usar a largura de um monitor
+       grande, deixando tudo pequeno com espaço vazio de sobra -- aumentado) */
+    --card-w: clamp(40px, 6vw, 84px);
     position: relative;
     /* anel: borda gradiente via box-shadow em camadas */
     box-shadow:
@@ -174,9 +177,9 @@
     background: linear-gradient(160deg, rgba(255,217,61,.07), var(--panel-2) 65%);
   }
 
-  .player-block .pname{ font-weight:700; font-size:13px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
-  .player-block .pname .you{ color:var(--accent); font-size:11px; }
-  .player-block .trios{ font-size:11px; color:var(--text-dim); margin:2px 0 12px; }
+  .player-block .pname{ font-weight:700; font-size:16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .player-block .pname .you{ color:var(--accent); font-size:13px; }
+  .player-block .trios{ font-size:13px; color:var(--text-dim); margin:2px 0 12px; }
   .hand-area{ display:flex; align-items:center; justify-content:center; gap:16px; flex-wrap:nowrap; }
   .player-reveals{ display:flex; justify-content:center; gap:8px; pointer-events:none; }
   .reveal-item{ display:flex; flex-direction:column; align-items:center; gap:3px; }
