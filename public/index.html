@@ -796,12 +796,29 @@ function cardHTML({cardId, handSeat, handPos, value, clickable, onclickAttr, dat
   const revealedVal = forceFaceUp ? value : getRevealValue(reveals||[], cardId||null, handSeat, handPos);
   const faceUp = forceFaceUp || (revealedVal !== null && revealedVal !== undefined);
   const val = value !== undefined ? value : revealedVal;
-  const cls = ['card']; if(faceUp) cls.push('face-up'); if(clickable) cls.push('clickable'); if(extraClass) cls.push(extraClass);
+  const cls = ['card']; if(clickable) cls.push('clickable'); if(extraClass) cls.push(extraClass);
+  const frontInner = val!==null&&val!==undefined ? (()=>{ const h=CORNER_HINTS[val]||{left:null,right:null}; return `${laceRingSVG()}<span class="corner corner-tl">${val}</span><span class="corner corner-tr">${val}</span><span class="card-number">${val}</span>${cornerBadge(h.left,'left')}${cornerBadge(h.right,'right')}`; })() : '';
+
+  if(forceFaceUp){
+    // Essas cartas nascem sempre viradas pra cima e nunca precisam animar
+    // o giro (mão inicial, cartas de "pop-up" reveladas) -- em vez de usar
+    // o giro 3D com verso escondido via backface-visibility, renderiza só
+    // a frente, sem verso nenhum no DOM. O Safari vinha vazando o verso
+    // por cima do número mesmo depois de várias tentativas de CSS; sem
+    // verso no DOM, não tem o que vazar.
+    return `<div class="${cls.join(' ')}" data-value="${val!==null&&val!==undefined?val:''}" ${dataAttrs||''} ${onclickAttr||''}>
+    <div class="card-inner">
+      <div class="card-face card-front" style="transform:none;">${frontInner}</div>
+    </div>
+  </div>`;
+  }
+
+  cls.push(...(faceUp ? ['face-up'] : []));
   return `<div class="${cls.join(' ')}" data-value="${val!==null&&val!==undefined?val:''}" ${dataAttrs||''} ${onclickAttr||''}>
     <div class="card-inner">
       <div class="card-face card-back">${cardBackHTML()}</div>
       <div class="card-face card-front">
-        ${val!==null&&val!==undefined ? (()=>{ const h=CORNER_HINTS[val]||{left:null,right:null}; return `${laceRingSVG()}<span class="corner corner-tl">${val}</span><span class="corner corner-tr">${val}</span><span class="card-number">${val}</span>${cornerBadge(h.left,'left')}${cornerBadge(h.right,'right')}`; })() : ''}
+        ${frontInner}
       </div>
     </div>
   </div>`;
