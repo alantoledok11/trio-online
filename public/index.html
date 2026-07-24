@@ -26,7 +26,7 @@
 
     --v1:  hsl(298, 100%, 22%);  --v2:  hsl(35 88% 55%);  --v3:  hsl(189, 100%, 46%);
     --v4:  hsl(9  82% 56%);  --v5:  hsl(310, 100%, 71%); --v6:  hsl(125, 74%, 46%);
-    --v7:  #7c712f;          --v8:  hsl(192, 100%, 23%); --v9:  hsl(288, 61%, 59%);
+    --v7:  #7c712f;          --v8:  hsl(192, 100%, 23%); --v9:  hsl(340, 65%, 45%);
     --v10: hsl(56, 77%, 50%); --v11: hsl(71, 100%, 61%); --v12: hsl(180, 100%, 76%);
   }
   *{ box-sizing:border-box; }
@@ -209,7 +209,7 @@
      mini-carta da trinca fechada não tinha isso */
   .mini-hint{ position:absolute; top:2px; font-size:8px; font-weight:800; line-height:1; opacity:.85; }
   .mini-hint.left{ left:2px; } .mini-hint.right{ right:2px; }
-  .mini-card[data-ref="1"], .mini-card[data-ref="2"], .mini-card[data-ref="7"]{ color:var(--ink-dark); text-shadow:none; }
+  .mini-card[data-ref="2"], .mini-card[data-ref="7"], .mini-card[data-ref="11"]{ color:var(--ink-dark); text-shadow:none; }
   .mini-card[data-ref="1"]{ background:var(--v1); } .mini-card[data-ref="2"]{ background:var(--v2); }
   .mini-card[data-ref="3"]{ background:var(--v3); } .mini-card[data-ref="4"]{ background:var(--v4); }
   .mini-card[data-ref="5"]{ background:var(--v5); } .mini-card[data-ref="6"]{ background:var(--v6); }
@@ -327,14 +327,14 @@
   .corner-badge{ position:absolute; bottom:calc(var(--card-w)*0.06); width:calc(var(--card-w)*0.22); height:calc(var(--card-w)*0.30); border-radius:calc(var(--card-w)*0.05); display:flex; align-items:center; justify-content:center; font-weight:800; color:#fff; font-size:calc(var(--card-w)*0.15); border:1.5px solid rgba(255,255,255,.55); box-shadow:0 2px 4px rgba(0,0,0,.35); }
   .corner-badge.left{ left:calc(var(--card-w)*0.07); transform:rotate(-6deg); }
   .corner-badge.right{ right:calc(var(--card-w)*0.07); transform:rotate(6deg); }
-  .corner-badge[data-ref="1"], .corner-badge[data-ref="2"], .corner-badge[data-ref="7"]{ color:var(--ink-dark); }
+  .corner-badge[data-ref="2"], .corner-badge[data-ref="7"], .corner-badge[data-ref="11"]{ color:var(--ink-dark); }
   .corner-badge[data-ref="1"]{ background:var(--v1); } .corner-badge[data-ref="2"]{ background:var(--v2); }
   .corner-badge[data-ref="3"]{ background:var(--v3); } .corner-badge[data-ref="4"]{ background:var(--v4); }
   .corner-badge[data-ref="5"]{ background:var(--v5); } .corner-badge[data-ref="6"]{ background:var(--v6); }
   .corner-badge[data-ref="7"]{ background:var(--v7); } .corner-badge[data-ref="8"]{ background:var(--v8); }
   .corner-badge[data-ref="9"]{ background:var(--v9); } .corner-badge[data-ref="10"]{ background:var(--v10); }
   .corner-badge[data-ref="11"]{ background:var(--v11); } .corner-badge[data-ref="12"]{ background:var(--v12); }
-  .card[data-value="1"]  .card-front{ --card-color:var(--v1);  --card-text:var(--ink-dark); }
+  .card[data-value="1"]  .card-front{ --card-color:var(--v1);  --card-text:#fff; }
   .card[data-value="2"]  .card-front{ --card-color:var(--v2);  --card-text:var(--ink-dark); }
   .card[data-value="3"]  .card-front{ --card-color:var(--v3);  --card-text:#fff; }
   .card[data-value="4"]  .card-front{ --card-color:var(--v4);  --card-text:#fff; }
@@ -344,7 +344,7 @@
   .card[data-value="8"]  .card-front{ --card-color:var(--v8);  --card-text:#fff; }
   .card[data-value="9"]  .card-front{ --card-color:var(--v9);  --card-text:#fff; }
   .card[data-value="10"] .card-front{ --card-color:var(--v10); --card-text:#fff; }
-  .card[data-value="11"] .card-front{ --card-color:var(--v11); --card-text:#fff; }
+  .card[data-value="11"] .card-front{ --card-color:var(--v11); --card-text:var(--ink-dark); }
   .card[data-value="12"] .card-front{ --card-color:var(--v12); --card-text:#fff; }
 
   /* ========== CHAT ========== */
@@ -433,6 +433,21 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
+
+// Toda vez que o socket conecta -- inclusive numa reconexão automática
+// depois de a tela travar/perder rede -- se já estávamos numa sala, pede
+// pra entrar de novo com o mesmo token. Sem isso, a conexão nova do
+// socket.io não tem mais o código da sala guardado no servidor (isso é por
+// conexão, não sobrevive à queda), e o app fica "zumbi": parece que você
+// ainda está na sala na tela, mas toda ação falha porque o servidor não
+// sabe mais quem você é.
+socket.on('connect', () => {
+  if(roomCode){
+    socket.emit('joinRoom', { code: roomCode, name: myName || 'Jogador', token: playerToken }, (res) => {
+      if(res && res.ok) mySeat = res.seat;
+    });
+  }
+});
 
 const CORNER_HINTS = {
   1: {left:6, right:8}, 2: {left:5, right:9}, 3: {left:4, right:10},
