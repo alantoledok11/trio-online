@@ -157,11 +157,16 @@
     .round-table[data-players="5"] .seat-wrap, .round-table[data-players="6"] .seat-wrap, .round-table[data-players="7"] .seat-wrap{ max-width: 28vw; }
 
     .player-block{ --card-w: clamp(22px, 5.5vw, 28px); padding: 5px 6px; }
-    .round-table[data-players="5"] .player-block, .round-table[data-players="6"] .player-block, .round-table[data-players="7"] .player-block{ --card-w: clamp(18px, 4.5vw, 22px); padding: 3px 4px; }
+    .round-table[data-players="5"] .player-block, .round-table[data-players="6"] .player-block, .round-table[data-players="7"] .player-block{ --card-w: clamp(24px, 6vw, 30px); padding: 5px 6px; }
     .player-block .pname{ font-size: 10px; margin-bottom: 2px; }
     .player-block .trios{ font-size: 8px; margin: 1px 0 3px; gap: 4px; }
-    .hand-area{ gap: 4px; }
     .hand-row{ gap: 3px; }
+    /* quando uma carta é revelada, cartas extras de "pop-up" (.player-reveals)
+       entram no mesmo hand-area -- no PC/desktop isso não é problema porque
+       sobra espaço, mas no celular isso alargava o bloco além da largura
+       calculada e esmagava a mesa/vizinhos. Agora quebra linha em vez de
+       alargar: o bloco cresce pra baixo, não pros lados. */
+    .hand-area{ gap: 4px; flex-wrap: wrap; }
     /* as mini-cartas da trinca tinham tamanho fixo (30px) e não encolhiam --
        jogador com trinca fechada ficava com bloco bem mais largo que o
        previsto, empurrando os vizinhos (causa real da sobreposição/corte
