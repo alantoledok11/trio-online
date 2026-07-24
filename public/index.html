@@ -138,10 +138,24 @@
   .round-table .seat-wrap .player-block{ width:100%; }
 
   @media (max-width:760px){
-    .round-table{ aspect-ratio: auto; min-height: 80vh; display: flex; flex-direction: column; gap: 12px; margin: 10px auto; }
-    .round-table .mesa-central{ position: relative; top: 0; left: 0; transform: none; width: 100%; border-radius: 14px; order: -1; aspect-ratio: auto; height: auto; padding: 30px; }
-    .round-table .seat-wrap{ position: relative; left: 0 !important; top: 0 !important; transform: none; width: 100%; align-self: stretch; }
-    .player-block { border-radius: 12px; height: auto; width: 100%; }
+    /* Mantém a mesa oval igual ao PC (mesma fórmula de posição), só encolhe
+       tudo pra caber na largura estreita do celular em vez de virar lista. */
+    .round-table{ aspect-ratio: 2/3; max-width: 420px; margin: 14px auto; }
+    .round-table[data-players="5"], .round-table[data-players="6"], .round-table[data-players="7"]{ aspect-ratio: 1/2; }
+
+    .round-table .mesa-central{
+      width: clamp(120px, 34vw, 170px); height: clamp(120px, 34vw, 170px);
+      --card-w: clamp(20px, 4.5vw, 28px); padding: 8px;
+    }
+    .round-table .seat-wrap{ max-width: 38vw; }
+    .round-table[data-players="5"] .seat-wrap, .round-table[data-players="6"] .seat-wrap, .round-table[data-players="7"] .seat-wrap{ max-width: 30vw; }
+
+    .player-block{ --card-w: clamp(24px, 6vw, 32px); padding: 6px 7px; }
+    .round-table[data-players="5"] .player-block, .round-table[data-players="6"] .player-block, .round-table[data-players="7"] .player-block{ --card-w: clamp(20px, 5vw, 26px); padding: 4px 5px; }
+    .player-block .pname{ font-size: 11px; margin-bottom: 3px; }
+    .player-block .trios{ font-size: 9px; margin: 1px 0 4px; }
+    .hand-area{ gap: 5px; }
+    .hand-row{ gap: 4px; }
   }
 
   .player-block{
@@ -762,7 +776,7 @@ function renderGame(){
     ${s.winner!==null ? '🏁 Jogo encerrado' : (myTurn ? 'É a sua vez! Clique numa carta pra revelar.' : 'Vez de '+escapeHtml((s.players.find(p=>p.seat===s.currentPlayer)||{}).name||'...')+'...')}
   </div>
   <div class="board">
-    <div class="round-table">
+    <div class="round-table" data-players="${n}">
       <div class="mesa-central${s.tableIds.length ? ' has-cards' : ''}">
         <div class="mesa-label">Mesa</div>
         <div class="table-row">${tableHtml}</div>
