@@ -259,6 +259,10 @@
        larga o bastante pra ultrapassar o bloco e invadir o vizinho, mesmo
        com o hand-area já quebrando linha. */
     .player-reveals{ flex-wrap: wrap; row-gap: 4px; }
+    /* rótulo "Menor"/"Maior" ficava grande demais perto de uma carta
+       pequena no mobile, tampando o número */
+    .reveal-item{ gap:1px; }
+    .reveal-tag{ font-size:7px; padding:0 3px; border-radius:3px; }
     /* as mini-cartas da trinca tinham tamanho fixo (30px) e não
        encolhiam -- jogador com trinca fechada ficava com bloco bem mais
        largo que o previsto, empurrando os vizinhos */
