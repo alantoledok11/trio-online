@@ -672,6 +672,16 @@ async function doStopTurn(){
   await emitAsync('stopTurn', {});
   actionInFlight = false;
 }
+function leaveRoomNow(askFirst){
+  if(askFirst && !confirm('Tem certeza que quer sair da sala?')){ return; }
+  socket.emit('leaveRoom', null, () => {
+    latestState = null;
+    roomCode = null;
+    homeTab = 'create';
+    clearLastRoom();
+    render();
+  });
+}
 /* -------------------------------- render --------------------------------- */
 function render(){
   const app = document.getElementById('app');
@@ -757,6 +767,7 @@ function renderWaiting(){
       <button class="btn-primary" id="startBtn" ${enough?'':'disabled'} style="width:100%;">Iniciar jogo</button>
       ${!enough ? `<p class="helptext">Precisa de pelo menos 3 jogadores.</p>` : `<p class="helptext">${latestState.players.length} jogadores prontos.</p>`}
     ` : `<p class="helptext">Aguardando o anfitrião iniciar...</p>`}
+    <button class="btn-outline" id="leaveWaitingBtn" style="width:100%; margin-top:10px;">Sair da sala</button>
   </div>`;
 }
 async function copyToClipboard(text, btn){
@@ -776,6 +787,8 @@ function bindWaiting(){
   if(copyCodeBtn) copyCodeBtn.onclick = () => copyToClipboard(latestState.code, copyCodeBtn);
   const copyLinkBtn = document.getElementById('copyLinkBtn');
   if(copyLinkBtn) copyLinkBtn.onclick = () => copyToClipboard(`${window.location.origin}/?code=${latestState.code}`, copyLinkBtn);
+  const leaveWaitingBtn = document.getElementById('leaveWaitingBtn');
+  if(leaveWaitingBtn) leaveWaitingBtn.onclick = () => leaveRoomNow(true);
 }
 
 // Retorna o valor revelado de uma carta, consultando o estado do servidor (ou frozenReveals)
@@ -940,6 +953,7 @@ function renderGame(){
   </style>
   <div class="topbar">
     <h2 style="font-size:20px;">Trio Online</h2>
+    <button class="btn-outline" id="leaveGameBtn" style="padding:7px 14px; font-size:12px;">Sair</button>
   </div>
   <div class="turn-banner ${myTurn?'mine':''}">
     ${s.winner!==null ? '🏁 Jogo encerrado' : (myTurn ? 'É a sua vez! Clique numa carta pra revelar.' : 'Vez de '+escapeHtml((s.players.find(p=>p.seat===s.currentPlayer)||{}).name||'...')+'...')}
@@ -1003,17 +1017,9 @@ function bindGame(){
     };
   }
   const leaveRoomBtn = document.getElementById('leaveRoomBtn');
-  if(leaveRoomBtn){
-    leaveRoomBtn.onclick = () => {
-      socket.emit('leaveRoom', null, () => {
-        latestState = null;
-        roomCode = null;
-        homeTab = 'create';
-        clearLastRoom();
-        render();
-      });
-    };
-  }
+  if(leaveRoomBtn) leaveRoomBtn.onclick = () => leaveRoomNow(false);
+  const leaveGameBtn = document.getElementById('leaveGameBtn');
+  if(leaveGameBtn) leaveGameBtn.onclick = () => leaveRoomNow(true);
   const closeHandBtn = document.getElementById('closeHandBtn');
   if(closeHandBtn){
     closeHandBtn.onclick = () => {

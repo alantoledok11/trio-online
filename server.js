@@ -293,15 +293,27 @@ io.on('connection', (socket) => {
   socket.on('leaveRoom', (_payload, ack) => {
     const room = findRoomOfSocket(socket);
     if(room) {
-      room.players = room.players.filter(p => p.socketId !== socket.id);
-      if(room.players.length === 0) {
-        delete rooms[room.code];
-      } else {
-        // Se o host saiu, passa o host para o próximo jogador
-        if (room.hostSocketId === socket.id) {
-          room.hostSocketId = room.players[0].socketId;
-        }
+      const midGame = room.state && room.state.turn && !room.state.winner;
+      const player = room.players.find(p => p.socketId === socket.id);
+      if(midGame && player){
+        // Saindo no meio de uma partida ativa: trata como uma desconexão
+        // (mantém a vaga e as cartas) em vez de remover de vez -- assim o
+        // mesmo mecanismo de pular a vez automaticamente cuida do resto
+        // sem travar o jogo pros outros jogadores.
+        player.connected = false;
+        scheduleTurnTimeoutIfDisconnected(room);
         broadcastState(room);
+      } else {
+        room.players = room.players.filter(p => p.socketId !== socket.id);
+        if(room.players.length === 0) {
+          delete rooms[room.code];
+        } else {
+          // Se o host saiu, passa o host para o próximo jogador
+          if (room.hostSocketId === socket.id) {
+            room.hostSocketId = room.players[0].socketId;
+          }
+          broadcastState(room);
+        }
       }
     }
     socket.leave(socket.data.roomCode);
