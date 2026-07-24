@@ -24,10 +24,10 @@
     --card-h: calc(var(--card-w) * 1.5);
     --card-radius: calc(var(--card-w) * 0.14);
 
-    --v1:  hsl(298, 100%, 22%);  --v2:  hsl(35 88% 55%);  --v3:  hsl(189, 100%, 46%);
+    --v1:  hsl(298, 100%, 22%);  --v2:  hsl(35 88% 55%);  --v3:  hsl(231, 100%, 62%);
     --v4:  hsl(9  82% 56%);  --v5:  hsl(310, 100%, 71%); --v6:  hsl(125, 74%, 46%);
     --v7:  #7c712f;          --v8:  hsl(192, 100%, 23%); --v9:  hsl(340, 65%, 45%);
-    --v10: hsl(56, 77%, 50%); --v11: hsl(71, 100%, 61%); --v12: hsl(180, 100%, 76%);
+    --v10: hsl(56, 77%, 50%); --v11: hsl(71, 100%, 61%); --v12: hsl(180, 100%, 43%);
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; }
@@ -912,11 +912,13 @@ function renderGame(){
 
   return `
   <style>
-    @keyframes pop-in { 0% { transform:scale(0) translateY(30px); opacity:0; } 100% { transform:scale(1) translateY(0); opacity:1; } }
-    /* a animação de entrada precisa ficar num wrapper FORA do .card -- se
-       aplicada no próprio .card (que tem perspective:900px pro giro 3D),
-       o Safari às vezes erra o cálculo de qual face esconder, deixando o
-       verso ("TRIO") vazar por cima do número mesmo depois do giro parar. */
+    /* Sem transform aqui de propósito -- mover a animação pro wrapper (fora
+       do .card) não bastou, porque um transform animado em QUALQUER
+       ancestral perto da carta 3D parece confundir o Safari do mesmo jeito
+       (o verso "TRIO" vazava por cima do número mesmo assim). Só opacidade
+       não mexe com a cena 3D de jeito nenhum, então não deveria disparar
+       esse bug em hipótese alguma. */
+    @keyframes pop-in { 0% { opacity:0; } 100% { opacity:1; } }
     .pop-in-wrap { display:inline-block; animation: pop-in .3s ease-out; }
   </style>
   <div class="topbar">
