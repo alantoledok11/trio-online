@@ -522,7 +522,7 @@ function escapeHtml(str){
   return String(str==null?'':str).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-let frozenReveals = []; // revelações congeladas após erro (exibidas por 3s antes de sumir)
+let frozenReveals = []; // revelações congeladas após erro (exibidas por menos de 1s antes de sumir)
 let frozenUntil = 0;
 
 socket.on('state', (s)=>{
@@ -545,8 +545,8 @@ socket.on('cardRevealed', (info)=>{
       cardId: info.cardId,
       value: info.value
     }];
-    frozenUntil = Date.now() + 3000;
-    setTimeout(()=>{ frozenReveals = []; render(); }, 3000);
+    frozenUntil = Date.now() + 900;
+    setTimeout(()=>{ frozenReveals = []; render(); }, 900);
   }
   render();
 });
