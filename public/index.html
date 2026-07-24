@@ -139,27 +139,29 @@
   }
   .round-table .seat-wrap .player-block{ width:100%; }
 
-  .table-scroll{ width:100%; position:relative; }
-  .scroll-hint{ display:none; text-align:center; font-size:11px; color:var(--text-dim); margin-top:6px; }
   @media (max-width:760px){
-    /* Tela estreita não tem largura pra espalhar 4-7 assentos ao redor da
-       mesa sem cortar alguém. Mantém a mesa no tamanho legível (igual PC)
-       num canvas fixo que rola de lado; JS foca a rolagem em "você" ao
-       entrar, e o degradê nas bordas avisa que dá pra arrastar. */
-    .table-scroll{
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      margin: 14px -18px 0;
-      padding: 0 18px 8px;
+    /* Sem rolagem: mesa e blocos encolhem E o raio de espalhamento da
+       elipse (44% no PC) cai pra 32% só aqui. É a combinação dos dois que
+       garante que nenhum assento nasce perto demais da borda nem esbarra
+       na mesa -- só encolher os blocos (como nas tentativas anteriores)
+       não bastava, porque o raio continuava empurrando alguém até a beira
+       da tela. Contas feitas pra caber numa largura útil de ~340px. */
+    .round-table{ aspect-ratio: 3/4; max-width: 400px; margin: 14px auto; }
+    .round-table[data-players="5"], .round-table[data-players="6"], .round-table[data-players="7"]{ aspect-ratio: 2/3; }
+
+    .round-table .mesa-central{
+      width: clamp(110px, 32vw, 150px); height: clamp(110px, 32vw, 150px);
+      --card-w: clamp(18px, 4vw, 24px); padding: 6px;
     }
-    .table-scroll::before, .table-scroll::after{
-      content:''; position:absolute; top:0; bottom:8px; width:24px; z-index:5; pointer-events:none;
-    }
-    .table-scroll::before{ left:0; background:linear-gradient(to right, var(--panel), transparent); }
-    .table-scroll::after{ right:0; background:linear-gradient(to left, var(--panel), transparent); }
-    .round-table{ width: 640px; max-width: none; aspect-ratio: 16/10; margin: 0 auto; flex: none; }
-    .round-table .mesa-central{ width: clamp(140px, 30vw, 190px); height: clamp(140px, 30vw, 190px); }
-    .scroll-hint{ display:block; }
+    .round-table .seat-wrap{ max-width: 34vw; }
+    .round-table[data-players="5"] .seat-wrap, .round-table[data-players="6"] .seat-wrap, .round-table[data-players="7"] .seat-wrap{ max-width: 28vw; }
+
+    .player-block{ --card-w: clamp(22px, 5.5vw, 28px); padding: 5px 6px; }
+    .round-table[data-players="5"] .player-block, .round-table[data-players="6"] .player-block, .round-table[data-players="7"] .player-block{ --card-w: clamp(18px, 4.5vw, 22px); padding: 3px 4px; }
+    .player-block .pname{ font-size: 10px; margin-bottom: 2px; }
+    .player-block .trios{ font-size: 8px; margin: 1px 0 3px; }
+    .hand-area{ gap: 4px; }
+    .hand-row{ gap: 3px; }
   }
 
   .player-block{
@@ -504,7 +506,7 @@ socket.on('state', (s)=>{
   if(s.reveals && s.reveals.length > 0) frozenReveals = [];
   render();
 });
-socket.on('gameStarted', ()=>{ frozenReveals = []; didAutoScrollTable = false; render(); });
+socket.on('gameStarted', ()=>{ frozenReveals = []; render(); });
 socket.on('turnStarted', ()=>{ render(); });
 socket.on('turnEnded', ()=>{ render(); });
 
@@ -756,17 +758,17 @@ function renderGame(){
     const hiRevealsHtml = hiReveals.length > 0 ? `<div class="player-reveals">${hiReveals.map(r => cardHTML({ value: r.value, forceFaceUp: true, extraClass: 'pop-in-card' })).join('')}</div>` : '';
 
     // layout oval (elipse) bem espaçado
-    // no celular a faixa rola de lado (.table-scroll); raio horizontal menor
-    // só ali pra nenhum assento nascer perto demais da borda do canvas fixo
+    // no celular o raio horizontal encolhe pra 32% (era 44%, igual ao PC) --
+    // sem isso, sobra sempre algum assento perto demais da borda da tela
     const isMobileLayout = window.innerWidth <= 760;
     const angle = Math.PI / 2 + (i * 2 * Math.PI / n);
-    const radiusX = isMobileLayout ? 30 : 44;
+    const radiusX = isMobileLayout ? 32 : 44;
     const radiusY = 38;
     const cx = 50 + radiusX * Math.cos(angle);
     const cy = 50 + radiusY * Math.sin(angle);
     const gridStyle = `left: ${cx}%; top: ${cy}%;`;
 
-    return `<div class="seat-wrap" style="${gridStyle}" ${p.seat===mySeat?'id="my-seat"':''}>
+    return `<div class="seat-wrap" style="${gridStyle}">
       <div class="player-block ${isActive?'active-turn':''}">
         <div class="pname"><span>${escapeHtml(p.name)}${!p.connected?' 💤':''}</span>${p.seat===mySeat?'<span class="you">você</span>':''}</div>
         <div class="trios">${triosHtml}<span class="dot-sep">·</span>${p.handCount} carta${p.handCount===1?'':'s'}</div>
@@ -793,16 +795,13 @@ function renderGame(){
     ${s.winner!==null ? '🏁 Jogo encerrado' : (myTurn ? 'É a sua vez! Clique numa carta pra revelar.' : 'Vez de '+escapeHtml((s.players.find(p=>p.seat===s.currentPlayer)||{}).name||'...')+'...')}
   </div>
   <div class="board">
-    <div class="table-scroll" id="tableScroll">
-      <div class="round-table">
-        <div class="mesa-central${s.tableIds.length ? ' has-cards' : ''}">
-          <div class="mesa-label">Mesa</div>
-          <div class="table-row">${tableHtml}</div>
-        </div>
-        ${seatsHtml}
+    <div class="round-table" data-players="${n}">
+      <div class="mesa-central${s.tableIds.length ? ' has-cards' : ''}">
+        <div class="mesa-label">Mesa</div>
+        <div class="table-row">${tableHtml}</div>
       </div>
+      ${seatsHtml}
     </div>
-    <p class="scroll-hint">← arraste pra ver os outros jogadores →</p>
     <div class="actionbar">
       ${canStop ? `<button class="btn-outline" id="stopBtn">Parar por aqui</button>` : ''}
     </div>
@@ -838,16 +837,7 @@ function renderEndOverlay(s){
     </div>
   </div></div>`;
 }
-let didAutoScrollTable = false;
 function bindGame(){
-  if(!didAutoScrollTable){
-    const scrollArea = document.getElementById('tableScroll');
-    const mySeatEl = document.getElementById('my-seat');
-    if(scrollArea && mySeatEl){
-      mySeatEl.scrollIntoView({ inline:'center', block:'nearest' });
-      didAutoScrollTable = true;
-    }
-  }
   const logBtn = document.getElementById('logToggleBtn');
   if(logBtn) logBtn.onclick = ()=>{ showLog=!showLog; render(); };
   const stopBtn = document.getElementById('stopBtn');
@@ -872,7 +862,6 @@ function bindGame(){
       socket.emit('leaveRoom', null, () => {
         latestState = null;
         homeTab = 'create';
-        didAutoScrollTable = false;
         render();
       });
     };
