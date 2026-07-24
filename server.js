@@ -81,6 +81,13 @@ function publicState(room){
       value: r.card.value
     })) : [],
     winner: state ? state.winner : null,
+    // Jogo tem dono da verdade nas cartas escondidas até acabar -- depois
+    // que alguém vence, não faz mais sentido esconder nada (e esconder só
+    // gerava desconfiança de fraude). Manda a mão real de todo mundo só
+    // nesse momento.
+    finalHands: state && state.winner !== null
+      ? state.players.map(p => ({ seat: p.seat, cards: p.hand.map(c => ({ id: c.id, value: c.value })) }))
+      : null,
     log: state ? state.log.slice(-40) : []
   };
 }

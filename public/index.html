@@ -188,6 +188,9 @@
     color:var(--ink-dark); background:var(--accent); border-radius:5px; padding:1px 6px;
   }
   .hand-row{ display:flex; gap:10px; flex-wrap:nowrap; align-items:center; justify-content:center; }
+  /* mão final revelada (fim de jogo) pode ter até 9 cartas -- essa precisa
+     poder quebrar linha, ao contrário da mão compacta normal (2-3 cartas) */
+  .hand-row.final-hand{ flex-wrap:wrap; row-gap:6px; max-width:calc(var(--card-w) * 5); }
   .hand-row .card.fan-end .card-face{ border-color:rgba(255,255,255,.8); }
   .hand-row .card.fan-end.clickable:hover .card-inner{ transform:translateY(-8px); }
   /* baralho oculto entre as duas cartas */
@@ -759,8 +762,13 @@ function renderGame(){
 
   const seatsHtml = seatOrder.map((p, i)=>{
     const isActive = p.seat === s.currentPlayer && !s.winner;
+    const finalHand = s.winner !== null && s.finalHands ? s.finalHands.find(h => h.seat === p.seat) : null;
     let handHtml;
-    if(p.handCount === 0){
+    if(finalHand){
+      // Jogo acabou: mostra a mão real de todo mundo, sem segredo nenhum --
+      // assim dá pra conferir que a vitória foi limpa.
+      handHtml = `<div class="hand-row final-hand">${finalHand.cards.map(c => cardHTML({ value: c.value, forceFaceUp: true })).join('')}</div>`;
+    } else if(p.handCount === 0){
       handHtml = '';
     } else if(p.handCount === 1){
       handHtml = `<div class="hand-row">${cardHTML({ handSeat:p.seat, handPos:'lowest', clickable:canAct, onclickAttr:canAct?`data-action="hand" data-seat="${p.seat}" data-pos="lowest"`:'', dataAttrs:`data-seat="${p.seat}" data-pos="lowest"`, extraClass:'fan-end' })}</div>`;
