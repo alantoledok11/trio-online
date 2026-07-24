@@ -561,6 +561,7 @@ const deepLinkCode = (new URLSearchParams(window.location.search).get('code') ||
 let homeTab = deepLinkCode ? 'join' : 'create';
 let homeError = '';
 let actionInFlight = false;
+let bootstrapping = false; // true enquanto tenta reentrar sozinho na última sala salva
 
 function cardKeyHand(seat, pos){ return 'hand:'+seat+':'+pos; }
 
@@ -580,6 +581,21 @@ function getPlayerToken(){
   }
 }
 const playerToken = getPlayerToken();
+
+// Guarda em qual sala você estava (sobrevive a recarregar a página inteira,
+// diferente das variáveis roomCode/mySeat que se perdem). Necessário porque
+// o celular às vezes descarta a aba sozinho quando a tela fica travada por
+// um tempo -- ao reabrir, o navegador recarrega a página do zero (perde
+// toda a memória do JS), então sem isso o jogo simplesmente "sumia".
+function saveLastRoom(code, name){
+  try{ localStorage.setItem('trioLastRoom', JSON.stringify({ code, name })); }catch(e){}
+}
+function loadLastRoom(){
+  try{ return JSON.parse(localStorage.getItem('trioLastRoom')); }catch(e){ return null; }
+}
+function clearLastRoom(){
+  try{ localStorage.removeItem('trioLastRoom'); }catch(e){}
+}
 
 function emitAsync(event, payload){
   return new Promise(resolve => socket.emit(event, payload, resolve));
@@ -623,6 +639,7 @@ async function createRoom(){
   const res = await emitAsync('createRoom', { name: myName.trim(), token: playerToken });
   if(!res.ok){ homeError = res.error || 'Não deu pra criar a sala.'; render(); return; }
   roomCode = res.code; mySeat = res.seat; homeError='';
+  saveLastRoom(roomCode, myName.trim());
 }
 async function joinRoom(){
   const code = (document.getElementById('joinCode')?.value || '').trim().toUpperCase();
@@ -631,6 +648,7 @@ async function joinRoom(){
   const res = await emitAsync('joinRoom', { code, name: myName.trim(), token: playerToken });
   if(!res.ok){ homeError = res.error || 'Não deu pra entrar.'; render(); return; }
   roomCode = res.code; mySeat = res.seat; homeError='';
+  saveLastRoom(roomCode, myName.trim());
 }
 async function startGame(){
   const res = await emitAsync('startGame', {});
@@ -657,9 +675,18 @@ async function doStopTurn(){
 /* -------------------------------- render --------------------------------- */
 function render(){
   const app = document.getElementById('app');
+  if(bootstrapping){ app.innerHTML = renderReconnecting(); return; }
   if(!roomCode || !latestState){ app.innerHTML = renderHome(); bindHome(); initChatWidget(); return; }
   if(latestState.status === 'waiting'){ app.innerHTML = renderWaiting(); bindWaiting(); initChatWidget(); return; }
   app.innerHTML = renderGame(); bindGame(); initChatWidget();
+}
+
+function renderReconnecting(){
+  return `
+  <div class="hero" style="padding-top:60px;">
+    <h1>TRIO</h1>
+    <p style="margin-top:14px;">Reconectando na sua sala...</p>
+  </div>`;
 }
 
 function renderHome(){
@@ -961,7 +988,9 @@ function bindGame(){
     leaveRoomBtn.onclick = () => {
       socket.emit('leaveRoom', null, () => {
         latestState = null;
+        roomCode = null;
         homeTab = 'create';
+        clearLastRoom();
         render();
       });
     };
@@ -975,7 +1004,30 @@ function bindGame(){
   }
 }
 
-render();
+// Ao carregar a página, se tiver uma sala salva de antes, tenta reentrar
+// sozinho antes de mostrar a tela inicial -- é o que resolve o celular
+// descartando a aba (fica um tempo com a tela travada, o navegador
+// recarrega do zero, e sem isso o jogo simplesmente sumia).
+(function bootstrapAutoRejoin(){
+  const last = loadLastRoom();
+  if(last && last.code){
+    bootstrapping = true;
+    if(last.name) myName = last.name;
+    render();
+    emitAsync('joinRoom', { code: last.code, name: last.name || 'Jogador', token: playerToken }).then(res => {
+      bootstrapping = false;
+      if(res && res.ok){
+        roomCode = res.code;
+        mySeat = res.seat;
+      } else {
+        clearLastRoom();
+      }
+      render();
+    });
+  } else {
+    render();
+  }
+})();
 </script>
 </body>
 </html>
