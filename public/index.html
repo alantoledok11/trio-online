@@ -159,9 +159,16 @@
     .player-block{ --card-w: clamp(22px, 5.5vw, 28px); padding: 5px 6px; }
     .round-table[data-players="5"] .player-block, .round-table[data-players="6"] .player-block, .round-table[data-players="7"] .player-block{ --card-w: clamp(18px, 4.5vw, 22px); padding: 3px 4px; }
     .player-block .pname{ font-size: 10px; margin-bottom: 2px; }
-    .player-block .trios{ font-size: 8px; margin: 1px 0 3px; }
+    .player-block .trios{ font-size: 8px; margin: 1px 0 3px; gap: 4px; }
     .hand-area{ gap: 4px; }
     .hand-row{ gap: 3px; }
+    /* as mini-cartas da trinca tinham tamanho fixo (30px) e não encolhiam --
+       jogador com trinca fechada ficava com bloco bem mais largo que o
+       previsto, empurrando os vizinhos (causa real da sobreposição/corte
+       na borda em jogos com trincas já fechadas) */
+    .mini-card{ width:16px; height:24px; font-size:9px; border-radius:3px; }
+    .trio-group{ gap:1px; }
+    .round-table[data-players="5"] .mini-card, .round-table[data-players="6"] .mini-card, .round-table[data-players="7"] .mini-card{ width:13px; height:19px; font-size:7px; }
   }
 
   .player-block{
