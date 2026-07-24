@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Trio Online</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg: #14151f;
@@ -299,26 +296,11 @@
   .card-inner{ position:relative; width:100%; height:100%; transition:transform .5s cubic-bezier(.4,.15,.2,1); -webkit-transform-style:preserve-3d; transform-style:preserve-3d; }
   .card.face-up .card-inner{ transform:rotateY(180deg); }
   .card-face{ position:absolute; inset:0; border-radius:calc(var(--card-w) * 0.14); border:max(2px, calc(var(--card-w)*0.03)) solid #fff; box-shadow:0 5px 12px rgba(0,0,0,.4); backface-visibility:hidden; -webkit-backface-visibility:hidden; display:flex; align-items:center; justify-content:center; }
-  .card-back{ background: linear-gradient(145deg,#1e2248 0%,#0d0f20 60%,#161836 100%); }
-  .card-back-logo{
-    position:relative; z-index:1;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    user-select:none;
-  }
-  .card-back-logo .trio-word{
-    font-family: 'Cinzel', Georgia, serif;
-    font-weight:900;
-    font-size: calc(var(--card-w)*0.20);
-    letter-spacing: calc(var(--card-w)*0.04);
-    line-height: 1;
-    color: rgba(205,210,220,0.95);
-    text-indent: calc(var(--card-w)*0.04);
-  }
+  .card-back{ background: #000 url('/img/card-back.png') center/cover no-repeat; }
 
   .card-front{ transform:rotateY(180deg); background:var(--card-color,#888); color:var(--card-text,#fff); }
   .lace-ring{ position:absolute; inset:0; width:100%; height:100%; }
   .lace-ring path{ fill: rgba(255,255,255,.55); }
-  .card-back .lace-ring path{ fill: rgba(255,255,255,.20); }
   .card-number{ font-weight:800; font-size:calc(var(--card-w)*0.46); line-height:1; }
   .corner{ position:absolute; font-weight:800; line-height:1; opacity:.92; }
   .corner-tl, .corner-tr{ top:calc(var(--card-w)*0.07); font-size:calc(var(--card-w)*0.16); }
@@ -476,7 +458,7 @@ function laceRingSVG(){
   </svg>`;
 }
 function cardBackHTML(){
-  return `${laceRingSVG()}<span class="card-back-logo"><span class="trio-word">TRIO</span></span>`;
+  return ''; // a imagem de fundo (.card-back) já traz toda a decoração e o "TRIO"
 }
 
 let myName = '';
