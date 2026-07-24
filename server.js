@@ -27,6 +27,7 @@ const {
 const PORT = process.env.PORT || 3000;
 const MIN_PLAYERS = 3;
 const MAX_PLAYERS = 7;
+const DISCONNECT_TURN_TIMEOUT_MS = 30000; // tempo sem ação de quem desconectou até o jogo pular a vez sozinho
 
 const app = express();
 app.use(express.static(path.join(__dirname, 'public')));
@@ -50,8 +51,9 @@ function makeRoom(code, hostSocketId){
     code,
     hostSocketId,
     status: 'waiting', // 'waiting' | 'playing'
-    players: [], // {seat, socketId, name, connected}
-    state: null  // preenchido por setupGame() quando o jogo começa
+    players: [], // {seat, socketId, name, connected, token}
+    state: null, // preenchido por setupGame() quando o jogo começa
+    turnTimer: null // agendado quando quem está na vez está desconectado
   };
 }
 
@@ -110,15 +112,42 @@ function advanceTurnIfNeeded(room){
     startTurn(state);
     io.to(room.code).emit('turnStarted', { player: state.currentPlayer });
   }
+  scheduleTurnTimeoutIfDisconnected(room);
+}
+
+function clearTurnTimer(room){
+  if(room.turnTimer){ clearTimeout(room.turnTimer); room.turnTimer = null; }
+}
+
+// Se quem está na vez está desconectado, agenda um "parar por aqui"
+// automático depois de DISCONNECT_TURN_TIMEOUT_MS -- sem isso o jogo trava
+// pra sempre esperando uma ação que nunca vem.
+function scheduleTurnTimeoutIfDisconnected(room){
+  clearTurnTimer(room);
+  const state = room.state;
+  if(!state || !state.turn || state.winner) return;
+  const seatOnTurn = state.turn.player;
+  const player = room.players.find(p => p.seat === seatOnTurn);
+  if(!player || player.connected) return;
+
+  room.turnTimer = setTimeout(() => {
+    room.turnTimer = null;
+    const s = room.state;
+    if(!s || !s.turn || s.turn.player !== seatOnTurn) return; // já mudou por outro motivo
+    stopTurn(s);
+    io.to(room.code).emit('turnEnded', { by: seatOnTurn, auto: true });
+    advanceTurnIfNeeded(room);
+    broadcastState(room);
+  }, DISCONNECT_TURN_TIMEOUT_MS);
 }
 
 io.on('connection', (socket) => {
 
-  socket.on('createRoom', ({ name }, ack) => {
+  socket.on('createRoom', ({ name, token }, ack) => {
     name = (name || '').trim().slice(0, 18) || 'Jogador';
     const code = genRoomCode();
     const room = makeRoom(code, socket.id);
-    room.players.push({ seat: 0, socketId: socket.id, name, connected: true });
+    room.players.push({ seat: 0, socketId: socket.id, name, connected: true, token: token || null });
     rooms[code] = room;
 
     socket.join(code);
@@ -129,16 +158,38 @@ io.on('connection', (socket) => {
     broadcastState(room);
   });
 
-  socket.on('joinRoom', ({ code, name }, ack) => {
+  socket.on('joinRoom', ({ code, name, token }, ack) => {
     code = (code || '').trim().toUpperCase();
     name = (name || '').trim().slice(0, 18) || 'Jogador';
     const room = rooms[code];
     if(!room) return ack && ack({ ok:false, error:'Sala não encontrada.' });
+
+    // Reconexão: mesmo token de alguém que já estava na sala -- reassume a
+    // vaga e as cartas em vez de virar um jogador novo. Funciona mesmo com
+    // o jogo já em andamento (é justamente o caso que importa aqui).
+    if(token){
+      const existing = room.players.find(p => p.token === token);
+      if(existing){
+        existing.socketId = socket.id;
+        existing.connected = true;
+        if(name) existing.name = name;
+        socket.join(code);
+        socket.data.roomCode = code;
+        socket.data.seat = existing.seat;
+        ack && ack({ ok:true, code, seat: existing.seat });
+        // reavalia o timer (limpa se era esse assento que estava travando o
+        // turno; mantém intacto se era outro jogador ainda desconectado)
+        if(room.state) scheduleTurnTimeoutIfDisconnected(room);
+        broadcastState(room);
+        return;
+      }
+    }
+
     if(room.status !== 'waiting') return ack && ack({ ok:false, error:'Esse jogo já começou.' });
     if(room.players.length >= MAX_PLAYERS) return ack && ack({ ok:false, error:'Sala cheia.' });
 
     const seat = room.players.length;
-    room.players.push({ seat, socketId: socket.id, name, connected: true });
+    room.players.push({ seat, socketId: socket.id, name, connected: true, token: token || null });
 
     socket.join(code);
     socket.data.roomCode = code;
@@ -173,6 +224,7 @@ io.on('connection', (socket) => {
         }
       }
       io.to(room.code).emit('turnStarted', { player: state.currentPlayer });
+      scheduleTurnTimeoutIfDisconnected(room);
       broadcastState(room);
     }catch(e){
       ack && ack({ ok:false, error: e.message });
@@ -230,9 +282,10 @@ io.on('connection', (socket) => {
     if(room.status !== 'playing') return ack && ack({ ok:false, error:'O jogo não está em andamento.' });
     
     // Volta para o modo sala de espera (lobby)
+    clearTurnTimer(room);
     room.status = 'waiting';
     room.state = null;
-    
+
     ack && ack({ ok:true });
     broadcastState(room);
   });
@@ -272,6 +325,7 @@ io.on('connection', (socket) => {
     if(!room) return;
     const player = room.players.find(p => p.socketId === socket.id);
     if(player) player.connected = false;
+    if(room.state) scheduleTurnTimeoutIfDisconnected(room);
     broadcastState(room);
   });
 });

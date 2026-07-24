@@ -535,6 +535,23 @@ let actionInFlight = false;
 
 function cardKeyHand(seat, pos){ return 'hand:'+seat+':'+pos; }
 
+// Token salvo no navegador (sobrevive a recarregar a página) -- se a conexão
+// cair no meio do jogo, entrar de novo com o mesmo código de sala e esse
+// mesmo token reassume a vaga e as cartas, em vez de virar um jogador novo.
+function getPlayerToken(){
+  try{
+    let t = localStorage.getItem('trioPlayerToken');
+    if(!t){
+      t = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('t'+Date.now()+Math.random().toString(36).slice(2));
+      localStorage.setItem('trioPlayerToken', t);
+    }
+    return t;
+  }catch(e){
+    return null; // localStorage indisponível (ex: modo privado bem restrito) -- só não tem reconexão
+  }
+}
+const playerToken = getPlayerToken();
+
 function emitAsync(event, payload){
   return new Promise(resolve => socket.emit(event, payload, resolve));
 }
@@ -574,7 +591,7 @@ socket.on('cardRevealed', (info)=>{
 /* --------------------------------- ações --------------------------------- */
 async function createRoom(){
   if(!myName.trim()){ homeError='Digite seu nome primeiro.'; render(); return; }
-  const res = await emitAsync('createRoom', { name: myName.trim() });
+  const res = await emitAsync('createRoom', { name: myName.trim(), token: playerToken });
   if(!res.ok){ homeError = res.error || 'Não deu pra criar a sala.'; render(); return; }
   roomCode = res.code; mySeat = res.seat; homeError='';
 }
@@ -582,7 +599,7 @@ async function joinRoom(){
   const code = (document.getElementById('joinCode')?.value || '').trim().toUpperCase();
   if(!myName.trim()){ homeError='Digite seu nome primeiro.'; render(); return; }
   if(!code){ homeError='Digite o código da sala.'; render(); return; }
-  const res = await emitAsync('joinRoom', { code, name: myName.trim() });
+  const res = await emitAsync('joinRoom', { code, name: myName.trim(), token: playerToken });
   if(!res.ok){ homeError = res.error || 'Não deu pra entrar.'; render(); return; }
   roomCode = res.code; mySeat = res.seat; homeError='';
 }
