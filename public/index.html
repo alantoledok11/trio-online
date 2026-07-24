@@ -763,7 +763,11 @@ function renderGame(){
     const isMobileLayout = window.innerWidth <= 760;
     const angle = Math.PI / 2 + (i * 2 * Math.PI / n);
     const radiusX = isMobileLayout ? 32 : 44;
-    const radiusY = 38;
+    // "você" (i=0) sempre cai no ponto mais extremo da elipse (seno=1),
+    // enquanto os outros ficam só na metade dessa distância -- por isso
+    // "você" parecia sobrar longe da mesa. No celular usa um raio vertical
+    // menor só pra "você", aproximando sem mexer na posição dos outros.
+    const radiusY = (isMobileLayout && i === 0) ? 26 : 38;
     const cx = 50 + radiusX * Math.cos(angle);
     const cy = 50 + radiusY * Math.sin(angle);
     const gridStyle = `left: ${cx}%; top: ${cy}%;`;
