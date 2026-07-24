@@ -215,7 +215,12 @@
        continuava empurrando alguém até a beira da tela. Contas feitas pra
        caber numa largura útil de ~340px. */
     .round-table{ aspect-ratio: 3/4; max-width: 400px; margin: 14px auto; }
-    .round-table[data-players="5"], .round-table[data-players="6"], .round-table[data-players="7"]{ aspect-ratio: 2/3; }
+    /* 2/3 (mais alto) era margem de segurança extra contra os bugs de
+       largura que já foram corrigidos -- deixava 5-7 jogadores com espaço
+       vazio demais. 7/10 é um meio-termo: ainda mais alto que o padrão
+       (3/4) pra manter folga vertical no pior caso (7 jogadores), mas sem
+       sobrar tanto espaço solto. */
+    .round-table[data-players="5"], .round-table[data-players="6"], .round-table[data-players="7"]{ aspect-ratio: 7/10; }
 
     .round-table .mesa-central{
       width: clamp(110px, 32vw, 150px); height: clamp(110px, 32vw, 150px);
@@ -241,7 +246,7 @@
        largo que o previsto, empurrando os vizinhos */
     .mini-card{ width:16px; height:24px; font-size:9px; border-radius:3px; }
     .trio-group{ gap:1px; }
-    .round-table[data-players="5"] .mini-card, .round-table[data-players="6"] .mini-card, .round-table[data-players="7"] .mini-card{ width:13px; height:19px; font-size:7px; }
+    .round-table[data-players="5"] .mini-card, .round-table[data-players="6"] .mini-card, .round-table[data-players="7"] .mini-card{ width:15px; height:22px; font-size:8px; }
   }
 
   .actionbar{ display:flex; justify-content:center; gap:10px; margin-top:16px; }
